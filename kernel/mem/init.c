@@ -128,7 +128,7 @@ void page_init(struct boot_info *boot_info)
 		    if (pa > BOOT_MAP_LIM)
 		        continue;
 //		    FIXME step 4 if page not reserved
-//          FIXME who is page? we have only pa
+            page = pa2page(pa);
             page_free(page);
 		}
 	}
