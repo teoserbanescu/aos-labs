@@ -127,10 +127,11 @@ void page_init(struct boot_info *boot_info)
 		for (pa = entry->addr; pa < entry->addr + entry->len; pa += PAGE_SIZE) {
 		    if (pa > BOOT_MAP_LIM)
 		        continue;
-//		    FIXME step 4 if page not reserved
             page = pa2page(pa);
-            page_free(page);
-		}
+            if (page->pp_ref == 0) {
+                page_free(page);
+            }
+        }
 	}
 }
 
