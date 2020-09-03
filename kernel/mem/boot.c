@@ -19,7 +19,7 @@
 void *boot_alloc(uint32_t n)
 {
 	/* Virtual address of the next byte of free memory. */
-	static char *next_free;
+	static char *next_free, *prev_free;
 	char *result;
 
 	/* Initialize next_free if this is the first time. 'end' is a magic
@@ -39,10 +39,16 @@ void *boot_alloc(uint32_t n)
 	 * LAB 1: your code here.
 	 */
 
+	prev_free = next_free;
+
 	if (n != 0) {
         next_free = ROUNDUP(next_free + n, PAGE_SIZE);
     }
-//	TODO where is the limit?
+
+	// Overflow means we are out of memory.
+	if (next_free < prev_free) {
+	    panic("[boot_alloc] Ran out of memory.");
+	}
 
     result = next_free;
 
