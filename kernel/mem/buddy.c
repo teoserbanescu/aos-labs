@@ -254,6 +254,7 @@ struct page_info *page_alloc(int alloc_flags)
     struct page_info *page;
     size_t req_order;
 
+    // FIXME Why do you call this with the alloc_flags arg? should be req_order
     page = buddy_find(alloc_flags);
 
     if (!page) {
@@ -261,6 +262,7 @@ struct page_info *page_alloc(int alloc_flags)
     }
 
     if (alloc_flags & ALLOC_ZERO) {
+        // FIXME memset(page2kva(page), '\0', PAGE_SIZE) ?
         memset(page, '\0', 1 << alloc_flags);
     }
 
