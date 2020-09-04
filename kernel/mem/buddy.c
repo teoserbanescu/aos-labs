@@ -156,7 +156,7 @@ struct page_info *buddy_merge(struct page_info *page)
     list_remove(&buddy->pp_node);
 
 //    page + buddy_page became one page
-    page = MIN(page, buddy);
+//    page = MIN(page, buddy);
     if (buddy < page) {
         // swap the addresses, we want to keep the page on the left
         struct page_info *aux = buddy;
