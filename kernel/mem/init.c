@@ -146,7 +146,15 @@ void page_init(struct boot_info *boot_info)
 //            cprintf("pa %d\n", pa);
 //            if (pa < EXT_PHYS_MEM)
 //                cprintf("AFTER %d\n", pa);
-            cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
+            if (page2pa(page) == 0x2000)
+                cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
+            if (page2pa(page) == 0x1000)
+                cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
+            if (page2pa(page) == 0x3000)
+                cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
+            if (page2pa(page) == 0x4000)
+                cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
+
             page_free(page);
         }
 	}

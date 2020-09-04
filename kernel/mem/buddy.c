@@ -154,6 +154,8 @@ struct page_info *buddy_merge(struct page_info *page)
 
     list_remove(&page->pp_node);
     list_remove(&buddy->pp_node);
+    buddy->pp_free = 0;
+
 
 //    page + buddy_page became one page
 //    page = MIN(page, buddy);
@@ -166,7 +168,6 @@ struct page_info *buddy_merge(struct page_info *page)
     page->pp_order++;
 
     // Mark the buddy as free.
-    buddy->pp_free = 1;
 
     return buddy_merge(page);
 }
