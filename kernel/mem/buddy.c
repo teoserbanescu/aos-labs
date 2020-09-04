@@ -196,6 +196,7 @@ struct page_info *buddy_find(size_t req_order)
 //    if find exact order return it
     list_foreach(page_free_list + req_order, node) {
         page = container_of(node, struct page_info, pp_node);
+        list_remove(&page->pp_node);
         return page;
     }
 
@@ -239,7 +240,7 @@ struct page_info *page_alloc(int alloc_flags)
     size_t req_order;
 
 //    FIXME is req_order correct?
-    req_order = alloc_flags;
+    req_order = alloc_flags == ALLOC_HUGE ? BUDDY_2M_PAGE : 0;
     page = buddy_find(req_order);
 
     if (!page) {
