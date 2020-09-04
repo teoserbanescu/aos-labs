@@ -129,7 +129,11 @@ void page_init(struct boot_info *boot_info)
             if (pa >= BOOT_MAP_LIM)
                 continue;
 
+
             page = pa2page(pa);
+
+//            if (pa < EXT_PHYS_MEM)
+//                cprintf("BEFORE %d\n", pa);
 
             if ((pa == 0 ||
                  pa == PAGE_ADDR(PADDR(boot_info)) ||
@@ -143,6 +147,8 @@ void page_init(struct boot_info *boot_info)
                 continue;
 //            cprintf("%d page_init\n", ++x);
 //            cprintf("pa %d\n", pa);
+//            if (pa < EXT_PHYS_MEM)
+//                cprintf("AFTER %d\n", pa);
             page_free(page);
         }
 	}

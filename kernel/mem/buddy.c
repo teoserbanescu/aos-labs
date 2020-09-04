@@ -47,11 +47,8 @@ void show_buddy_info(void)
 
 	cprintf("Buddy allocator:\n");
 
-	int twos = 0;
-
 	for (order = 0; order < BUDDY_MAX_ORDER; ++order) {
 		nfree_pages = count_free_pages(order);
-        twos += nfree_pages == 2 && order != 9;
 
 		cprintf("  order #%u pages=%u\n", order, nfree_pages);
 
@@ -59,8 +56,6 @@ void show_buddy_info(void)
 	}
 
 	cprintf("  free: %u kiB\n", nfree / 1024);
-    if (twos > 1)
-        panic("twos");
 }
 
 /* Gets the total amount of free pages. */
@@ -123,6 +118,11 @@ size_t count_total_free_pages(void)
 	return page;
 }
 
+struct page_info *get_buddy(struct page_info *page) {
+    return pages + ((page - pages) ^ (1 << page->pp_order));
+}
+
+
 /* Merges the buddy of the page with the page if the buddy is free to form
  * larger and larger free pages until either the maximum order is reached or
  * no free buddy is found.
@@ -141,10 +141,8 @@ size_t count_total_free_pages(void)
  */
 struct page_info *buddy_merge(struct page_info *page)
 {
-    static int i = 0;
 	/* LAB 1: your code here. */
-    struct list *head, *node;
-    struct page_info *buddy_page, *next_order, *first_page;
+    struct page_info *buddy;
     int debug = 0;
 
     if (debug)
@@ -153,52 +151,25 @@ struct page_info *buddy_merge(struct page_info *page)
     if (debug)
         show_buddy_info();
 
-    /*  if page is the 2 or 3rd consecutive with the same order => it is not the head, respect de algorithm
-     *  investigate: can it be the 3rd?
-     */
     if (page->pp_order == BUDDY_MAX_ORDER - 1)
         return page;
 
-//  get page of same order with the lowest address
-//  FIXME it is not necessary the first in the list
-    head = list_head(page_free_list + page->pp_order);
-    if (debug)
-        cprintf("head pointer %p \n", *head);
-    if (head == NULL)
-        return page;
-    first_page = container_of(head, struct page_info, pp_node);
-    if (debug)
-        cprintf("head order %d \n", page->pp_order);
-
-    if (!first_page->pp_free)
+    if (!page->pp_free)
         return page;
 
-//    in case of bigger pages than PAGESIZE the buddy is not page + 1
-//      FIXME get correct buddy
-    node = list_next(page_free_list + page->pp_order, head);
-    if (debug)
-        cprintf("buddy pointer %p \n", *node);
-
-    if (node == NULL)
+    buddy = get_buddy(page);
+    if (!buddy->pp_free || buddy->pp_order != page->pp_order)
         return page;
-    buddy_page = container_of(node, struct page_info, pp_node);
-    if (debug)
-        cprintf("buddy order %d \n", buddy_page->pp_order);
 
-    if (!buddy_page->pp_free || page->pp_order != buddy_page->pp_order)
-        return first_page;
 
-//  remove first_page
-    list_pop_left(page_free_list + page->pp_order);
-//  remove buddy
-    list_pop_left(page_free_list + page->pp_order);
+    list_remove(&page->pp_node);
+    list_remove(&buddy->pp_node);
 
-//    first_page + buddy_page became one page
-    first_page->pp_order++;
+//    page + buddy_page became one page
+    page = MIN(page, buddy);
+    page->pp_order++;
 
-    list_push(page_free_list + first_page->pp_order, &first_page->pp_node);
-    next_order = buddy_merge(first_page);
-    return next_order != first_page ? next_order : first_page;
+    return buddy_merge(page);
 }
 
 /* Given the order req_order, attempts to find a page of that order or a larger
@@ -293,10 +264,8 @@ void page_free(struct page_info *pp)
 	pp->pp_free = 1;
 //    show_buddy_info();
 
-    list_push(page_free_list + pp->pp_order, &pp->pp_node);
     page = buddy_merge(pp);
-    if (page != pp)
-        list_push(page_free_list + page->pp_order, &page->pp_node);
+    list_push(page_free_list + page->pp_order, &page->pp_node);
 
 //    if (page && page != pp) {
 //        list_push(page_free_list + page->pp_order, &page->pp_node);
