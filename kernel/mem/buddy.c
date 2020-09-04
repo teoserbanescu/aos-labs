@@ -22,8 +22,10 @@ size_t count_free_pages(size_t order)
 	if (order >= BUDDY_MAX_ORDER) {
 		return 0;
 	}
+//    static int x = 0;
 
 	list_foreach(page_free_list + order, node) {
+//        cprintf("%d\n", ++x);
 		++nfree_pages;
 	}
 
@@ -87,7 +89,33 @@ size_t count_total_free_pages(void)
  struct page_info *buddy_split(struct page_info *lhs, size_t req_order)
 {
 	/* LAB 1: your code here. */
-	return NULL;
+
+    /* Node - there will be no buddy between order k and req_order, because otherwise
+     * it would have been returned by buddy_find(..)
+     */
+    struct page_info *page, *buddy_page;
+    struct list *node;
+
+    page = NULL;
+
+    list_foreach(page_free_list + req_order, node) {
+        page = container_of(node, struct page_info, pp_node);
+    }
+
+    page->pp_order -= 1;
+    list_pop(page_free_list + req_order);
+    list_push(page_free_list + req_order, node);
+
+    buddy_page = page + (1 << page->pp_order);
+    buddy_page->pp_order -= 1;
+    buddy_page->pp_free = 1;
+    list_push(page_free_list + buddy_page->pp_order, &buddy_page->pp_node);
+
+    if (page->pp_order != req_order) {
+        page = buddy_split(page, req_order);
+    }
+
+	return page;
 }
 
 /* Merges the buddy of the page with the page if the buddy is free to form
@@ -108,8 +136,61 @@ size_t count_total_free_pages(void)
  */
 struct page_info *buddy_merge(struct page_info *page)
 {
+    static int i = 0;
+    cprintf("iter %d \n", i++);
 	/* LAB 1: your code here. */
-	return NULL;
+    struct list *head, *node;
+    struct page_info *buddy_page, *next_order;
+
+    /*  if page is the 2 or 3rd consecutive with the same order => it is not the head, respect de algorithm
+     *  investigate: can it be the 3rd?
+     */
+    head = list_head(page_free_list + page->pp_order);
+    cprintf("head pointer %p \n", *head);
+    if (head == NULL)
+        return NULL;
+    page = container_of(head, struct page_info, pp_node);
+    cprintf("head order %d \n", page->pp_order);
+
+    if (!page->pp_free)
+        return NULL;
+
+//    in case of bigger pages than PAGESIZE the buddy is not page + 1
+    node = list_next(page_free_list + page->pp_order, head);
+    cprintf("buddy pointer %p \n", *node);
+
+    if (node == NULL)
+        return NULL;
+    buddy_page = container_of(node, struct page_info, pp_node);
+    cprintf("buddy order %d \n", buddy_page->pp_order);
+
+    if (!buddy_page->pp_free || page->pp_order != buddy_page->pp_order)
+        return NULL;
+
+//  remove page
+    list_pop_left(page_free_list + page->pp_order);
+//  remove buddy
+    list_pop_left(page_free_list + page->pp_order);
+
+    page->pp_order++;
+    buddy_page->pp_order++;
+
+    if (page->pp_order == BUDDY_MAX_ORDER)
+        return page;
+
+//    get the last one from the previous order
+//    list_foreach(page_free_list + page->pp_order, node) {
+//        next_order = container_of(node, struct page_info, pp_node);
+//    }
+    list_push(page_free_list + page->pp_order, &page->pp_node);
+    next_order = buddy_merge(buddy_page);
+    if (next_order) {
+        return next_order;
+    }
+    else {
+        list_pop(page_free_list + page->pp_order);
+        return page;
+    }
 }
 
 /* Given the order req_order, attempts to find a page of that order or a larger
@@ -122,7 +203,34 @@ struct page_info *buddy_merge(struct page_info *page)
 struct page_info *buddy_find(size_t req_order)
 {
 	/* LAB 1: your code here. */
-	return NULL;
+
+    struct list *node;
+    struct page_info *page, *big_page;
+
+    page = NULL;
+    big_page = NULL;
+
+    if (req_order >= BUDDY_MAX_ORDER) {
+        return page;
+    }
+
+//    find exact order
+    list_foreach(page_free_list + req_order, node) {
+        page = container_of(node, struct page_info, pp_node);
+        return page;
+    }
+
+    for (size_t order = req_order + 1; order < BUDDY_MAX_ORDER; ++order){
+        list_foreach(page_free_list + req_order, node) {
+            big_page = container_of(node, struct page_info, pp_node);
+        }
+        if (big_page) {
+            page = buddy_split(big_page, req_order);
+            return page;
+        }
+    }
+
+    return page;
 }
 
 /*
@@ -143,7 +251,20 @@ struct page_info *buddy_find(size_t req_order)
 struct page_info *page_alloc(int alloc_flags)
 {
 	/* LAB 1: your code here. */
-	return NULL;
+    struct page_info *page;
+    size_t req_order;
+
+    page = buddy_find(alloc_flags);
+
+    if (!page) {
+        panic("out of free memory");
+    }
+
+    if (alloc_flags & ALLOC_ZERO) {
+        memset(page, '\0', 1 << alloc_flags);
+    }
+
+	return page;
 }
 
 /*
@@ -156,6 +277,19 @@ struct page_info *page_alloc(int alloc_flags)
 void page_free(struct page_info *pp)
 {
 	/* LAB 1: your code here. */
+    struct page_info *page;
+
+	pp->pp_free = 1;
+    list_push(page_free_list + pp->pp_order, &pp->pp_node);
+//    show_buddy_info();
+
+    page = buddy_merge(pp);
+
+    if (page) {
+        list_push(page_free_list + page->pp_order, &page->pp_node);
+//        cprintf("#########merged#######\n");
+//        show_buddy_info();
+    }
 }
 
 /*
