@@ -97,7 +97,7 @@ void page_init(struct boot_info *boot_info)
 	 */
 	for (i = 0; i < npages; ++i) {
 		/* LAB 1: your code here. */
-		page = pages + i * (sizeof *pages);
+		page = pages + i;
 		list_init(&page->pp_node);
 		page->pp_ref = 0;
 		page->pp_free = 0;
@@ -129,7 +129,6 @@ void page_init(struct boot_info *boot_info)
             if (pa >= BOOT_MAP_LIM)
                 continue;
 
-
             page = pa2page(pa);
 
 //            if (pa < EXT_PHYS_MEM)
@@ -143,12 +142,11 @@ void page_init(struct boot_info *boot_info)
                 continue;
             }
 
-            if (page->pp_ref)
-                continue;
 //            cprintf("%d page_init\n", ++x);
 //            cprintf("pa %d\n", pa);
 //            if (pa < EXT_PHYS_MEM)
 //                cprintf("AFTER %d\n", pa);
+            cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
             page_free(page);
         }
 	}
