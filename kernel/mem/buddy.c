@@ -205,6 +205,8 @@ struct page_info *buddy_find(size_t req_order)
         if (node) {
             big_page = container_of(node, struct page_info, pp_node);
             page = buddy_split(big_page, req_order);
+            // FIXME does it need to be removed?
+            list_remove(&page->pp_node);
             return page;
         }
 //        list_remove
