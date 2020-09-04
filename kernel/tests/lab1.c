@@ -87,27 +87,27 @@ void lab1_check_memory_layout(struct boot_info *boot_info)
 
 			page = pa2page(pa);
 
-//			if ((pa == 0 ||
-//			    pa == PAGE_ADDR(PADDR(boot_info)) ||
-//			    pa == (uintptr_t)boot_info->elf_hdr ||
-//			    (KERNEL_LMA <= pa && pa < end) ||
-//			    entry->type != MMAP_FREE) &&
-//			    page->pp_free) {
-//				panic("%p should not be free\n", page2pa(page));
-//			}
+			if ((pa == 0 ||
+			    pa == PAGE_ADDR(PADDR(boot_info)) ||
+			    pa == (uintptr_t)boot_info->elf_hdr ||
+			    (KERNEL_LMA <= pa && pa < end) ||
+			    entry->type != MMAP_FREE) &&
+			    page->pp_free) {
+				panic("%p should not be free\n", page2pa(page));
+			}
 
-            if (page->pp_free) {
-                if (pa == 0)
-                    panic("pa == 0");
-                if (pa == PAGE_ADDR(PADDR(boot_info)))
-                    panic("pa == PAGE_ADDR(PADDR(boot_info))");
-                if (pa == (uintptr_t) boot_info->elf_hdr)
-                    panic("pa == (uintptr_t)boot_info->elf_hdr");
-                if (KERNEL_LMA <= pa && pa < end)
-                    panic("KERNEL_LMA <= pa && pa < end");
-                if (entry->type != MMAP_FREE)
-                    panic("entry->type != MMAP_FREE");
-            }
+//            if (page->pp_free) {
+//                if (pa == 0)
+//                    panic("pa == 0");
+//                if (pa == PAGE_ADDR(PADDR(boot_info)))
+//                    panic("pa == PAGE_ADDR(PADDR(boot_info))");
+//                if (pa == (uintptr_t) boot_info->elf_hdr)
+//                    panic("pa == (uintptr_t)boot_info->elf_hdr");
+//                if (KERNEL_LMA <= pa && pa < end)
+//                    panic("KERNEL_LMA <= pa && pa < end");
+//                if (entry->type != MMAP_FREE)
+//                    panic("entry->type != MMAP_FREE");
+//            }
 		}
 	}
 
@@ -249,8 +249,8 @@ void lab1_check_mem(struct boot_info *boot_info)
 {
     show_buddy_info();
 	lab1_check_free_list_avail();
-//	lab1_check_free_list_order();
-//	lab1_check_memory_layout(boot_info);
-//	lab1_check_buddy_consistency();
+	lab1_check_free_list_order();
+	lab1_check_memory_layout(boot_info);
+	lab1_check_buddy_consistency();
 //	lab1_check_split_and_merge();
 }

@@ -140,9 +140,9 @@ void page_init(struct boot_info *boot_info)
                  pa == (uintptr_t)boot_info->elf_hdr ||
                  (KERNEL_LMA <= pa && pa < end) ||
                  entry->type != MMAP_FREE)) {
-//                 &&page->pp_free) {
                 continue;
             }
+
             if (page->pp_ref)
                 continue;
 //            cprintf("%d page_init\n", ++x);

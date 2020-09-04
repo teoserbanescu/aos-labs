@@ -75,6 +75,10 @@ size_t count_total_free_pages(void)
 	return nfree;
 }
 
+struct page_info *get_buddy(struct page_info *page) {
+    return pages + ((page - pages) ^ (1 << page->pp_order));
+}
+
 /* Splits lhs into free pages until the order of the page is the requested
  * order req_order.
  *
@@ -93,35 +97,21 @@ size_t count_total_free_pages(void)
     /* Node - there will be no buddy between order k and req_order, because otherwise
      * it would have been returned by buddy_find(..)
      */
-    struct page_info *page, *buddy_page;
+    struct page_info *buddy;
     struct list *node;
 
-    page = NULL;
+    if (lhs->pp_order == req_order)
+        return lhs;
 
-    list_foreach(page_free_list + req_order, node) {
-        page = container_of(node, struct page_info, pp_node);
-    }
+    lhs->pp_order -= 1;
+    buddy = get_buddy(lhs);
+    buddy->pp_order = lhs->pp_order;
 
-    page->pp_order -= 1;
-    list_pop(page_free_list + req_order);
-    list_push(page_free_list + req_order, node);
+    buddy->pp_free = 1;
+    list_push(page_free_list + buddy->pp_order, &buddy->pp_node);
 
-    buddy_page = page + (1 << page->pp_order);
-    buddy_page->pp_order -= 1;
-    buddy_page->pp_free = 1;
-    list_push(page_free_list + buddy_page->pp_order, &buddy_page->pp_node);
-
-    if (page->pp_order != req_order) {
-        page = buddy_split(page, req_order);
-    }
-
-	return page;
+	return buddy_split(lhs, req_order);
 }
-
-struct page_info *get_buddy(struct page_info *page) {
-    return pages + ((page - pages) ^ (1 << page->pp_order));
-}
-
 
 /* Merges the buddy of the page with the page if the buddy is free to form
  * larger and larger free pages until either the maximum order is reached or
@@ -190,10 +180,10 @@ struct page_info *buddy_find(size_t req_order)
     big_page = NULL;
 
     if (req_order >= BUDDY_MAX_ORDER) {
-        return page;
+        return NULL;
     }
 
-//    find exact order
+//    if find exact order return it
     list_foreach(page_free_list + req_order, node) {
         page = container_of(node, struct page_info, pp_node);
         return page;
