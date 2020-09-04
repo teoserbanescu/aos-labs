@@ -232,14 +232,13 @@ struct page_info *buddy_find(size_t req_order)
     }
 
     for (size_t order = req_order + 1; order < BUDDY_MAX_ORDER; ++order){
-        list_foreach(page_free_list + req_order, node) {
+        node = list_head(page_free_list + req_order);
+        if (node) {
             big_page = container_of(node, struct page_info, pp_node);
-            // FIXME we should stop at the first found page
-        }
-        if (big_page) {
             page = buddy_split(big_page, req_order);
             return page;
         }
+            // Fixed???? we should stop at the first found page
     }
 
     return page;
