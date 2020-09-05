@@ -22,8 +22,6 @@ void lab1_check_free_list_avail(void)
 		list_foreach(page_free_list + order, node) {
 			page = container_of(node, struct page_info, pp_node);
 
-			cprintf("order %d pa %d\n", order, page2pa(page));
-
 			if (page2pa(page) < EXT_PHYS_MEM) {
 				++nfree_basemem;
 			} else {
@@ -31,8 +29,7 @@ void lab1_check_free_list_avail(void)
 			}
 		}
 	}
-    cprintf("nfree_basemem %d\n", nfree_basemem);
-    cprintf("nfree_extmem %d\n", nfree_extmem);
+
 	assert(nfree_basemem > 0);
 	assert(nfree_extmem > 0);
 
@@ -75,11 +72,7 @@ void lab1_check_memory_layout(struct boot_info *boot_info)
 	entry = (struct mmap_entry *)KADDR(boot_info->mmap_addr);
 	end = PADDR(boot_alloc(0));
 
-	int debug = 0;
-
 	for (order = 0; order < boot_info->mmap_len; ++order, ++entry) {
-        if (debug)
-        cprintf("order %d \n", order);
 		for (pa = entry->addr; pa < entry->addr + entry->len;
 		     pa += PAGE_SIZE) {
 			if (pa >= BOOT_MAP_LIM)
@@ -95,19 +88,6 @@ void lab1_check_memory_layout(struct boot_info *boot_info)
 			    page->pp_free) {
 				panic("%p should not be free\n", page2pa(page));
 			}
-
-//            if (page->pp_free) {
-//                if (pa == 0)
-//                    panic("pa == 0");
-//                if (pa == PAGE_ADDR(PADDR(boot_info)))
-//                    panic("pa == PAGE_ADDR(PADDR(boot_info))");
-//                if (pa == (uintptr_t) boot_info->elf_hdr)
-//                    panic("pa == (uintptr_t)boot_info->elf_hdr");
-//                if (KERNEL_LMA <= pa && pa < end)
-//                    panic("KERNEL_LMA <= pa && pa < end");
-//                if (entry->type != MMAP_FREE)
-//                    panic("entry->type != MMAP_FREE");
-//            }
 		}
 	}
 
@@ -247,10 +227,9 @@ void lab1_check_split_and_merge(void)
 
 void lab1_check_mem(struct boot_info *boot_info)
 {
-    show_buddy_info();
 	lab1_check_free_list_avail();
 	lab1_check_free_list_order();
 	lab1_check_memory_layout(boot_info);
 	lab1_check_buddy_consistency();
-//	lab1_check_split_and_merge();
+	lab1_check_split_and_merge();
 }

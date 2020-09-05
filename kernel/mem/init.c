@@ -98,11 +98,11 @@ void page_init(struct boot_info *boot_info)
 	for (i = 0; i < npages; ++i) {
 		/* LAB 1: your code here. */
 		page = pages + i;
-		list_init(&page->pp_node);
 		page->pp_ref = 0;
-		page->pp_free = 0;
-		page->pp_order = 0;
-	}
+        page->pp_free = 0;
+        page->pp_order = 0;
+        list_init(&page->pp_node);
+    }
 
 	entry = (struct mmap_entry *)KADDR(boot_info->mmap_addr);
 	end = PADDR(boot_alloc(0));
@@ -119,20 +119,14 @@ void page_init(struct boot_info *boot_info)
 	 *  - boot_info->elf_hdr points to the ELF header.
 	 *  - Any address in [KERNEL_LMA, end) is part of the kernel.
 	 */
-	static int x = 0;
-    cprintf("%d\n", end);
 	for (i = 0; i < boot_info->mmap_len; ++i, ++entry) {
 		/* LAB 1: your code here. */
-//		copy what lab1_check_memory_layout test does
 		for (pa = entry->addr; pa < entry->addr + entry->len; pa += PAGE_SIZE) {
 
             if (pa >= BOOT_MAP_LIM)
                 continue;
 
             page = pa2page(pa);
-
-//            if (pa < EXT_PHYS_MEM)
-//                cprintf("BEFORE %d\n", pa);
 
             if ((pa == 0 ||
                  pa == PAGE_ADDR(PADDR(boot_info)) ||
@@ -142,21 +136,11 @@ void page_init(struct boot_info *boot_info)
                 continue;
             }
 
-//            cprintf("%d page_init\n", ++x);
-//            cprintf("pa %d\n", pa);
-//            if (pa < EXT_PHYS_MEM)
-//                cprintf("AFTER %d\n", pa);
-            if (page2pa(page) == 0x2000)
-                cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
-            if (page2pa(page) == 0x1000)
-                cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
-            if (page2pa(page) == 0x3000)
-                cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
-            if (page2pa(page) == 0x4000)
-                cprintf("page %p of order %u\n", page2pa(page), page->pp_order);
-
             page_free(page);
         }
 	}
+#ifdef DEBUG
+	show_buddy_info();
+#endif
 }
 
