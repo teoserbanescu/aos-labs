@@ -99,10 +99,10 @@ void page_init(struct boot_info *boot_info)
 		/* LAB 1: your code here. */
 		page = pages + i;
 		page->pp_ref = 0;
-        page->pp_free = 0;
-        page->pp_order = 0;
-        list_init(&page->pp_node);
-    }
+		page->pp_free = 0;
+		page->pp_order = 0;
+		list_init(&page->pp_node);
+	}
 
 	entry = (struct mmap_entry *)KADDR(boot_info->mmap_addr);
 	end = PADDR(boot_alloc(0));
@@ -123,21 +123,21 @@ void page_init(struct boot_info *boot_info)
 		/* LAB 1: your code here. */
 		for (pa = entry->addr; pa < entry->addr + entry->len; pa += PAGE_SIZE) {
 
-            if (pa >= BOOT_MAP_LIM)
-                continue;
+			if (pa >= BOOT_MAP_LIM)
+				continue;
 
-            page = pa2page(pa);
+			page = pa2page(pa);
 
-            if ((pa == 0 ||
-                 pa == PAGE_ADDR(PADDR(boot_info)) ||
-                 pa == (uintptr_t)boot_info->elf_hdr ||
-                 (KERNEL_LMA <= pa && pa < end) ||
-                 entry->type != MMAP_FREE)) {
-                continue;
-            }
+			if ((pa == 0 ||
+				 pa == PAGE_ADDR(PADDR(boot_info)) ||
+				 pa == (uintptr_t)boot_info->elf_hdr ||
+				 (KERNEL_LMA <= pa && pa < end) ||
+				 entry->type != MMAP_FREE)) {
+				continue;
+			}
 
-            page_free(page);
-        }
+			page_free(page);
+		}
 	}
 #ifdef DEBUG
 	show_buddy_info();
