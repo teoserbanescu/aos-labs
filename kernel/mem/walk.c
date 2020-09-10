@@ -101,6 +101,24 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
     struct page_walker *walker)
 {
 	/* LAB 2: your code here. */
+/*
+ * The first level is called PML4 and the upper 9 bits of the 36 bits bits are used to find the
+ * offset in the PML4 directory. The entry at that offset will point to the second level (or page directory
+ * pointer (PDPT))
+ * */
+
+//	int entry = 0x109000 >>
+//	for (int i = 0; i < 512; ++i) {
+//	    if (!pml4->entries[i] & PAGE_PRESENT)
+//		    pml4->entries[i] = page2pa(page_alloc(ALLOC_ZERO | PAGE_PRESENT));
+////        pml4->
+//	}
+//	if (!pml4->entries[base] & PAGE_PRESENT) {
+//		pml4->entries[base] = page2pa(page_alloc(ALLOC_ZERO));
+//	}
+//	for (uintptr_t it = base; it < end; ++it) {
+//
+//	}
 	return 0;
 }
 

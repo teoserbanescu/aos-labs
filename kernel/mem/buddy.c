@@ -218,7 +218,7 @@ struct page_info *page_alloc(int alloc_flags)
 	struct page_info *page;
 	size_t req_order;
 
-	req_order = ((unsigned int)alloc_flags & (unsigned int)ALLOC_HUGE) ? BUDDY_2M_PAGE : 0;
+	req_order = ((unsigned int)alloc_flags & (unsigned int)ALLOC_HUGE) ? BUDDY_2M_PAGE : BUDDY_4K_PAGE;
 	page = buddy_find(req_order);
 
 	if (!page)
