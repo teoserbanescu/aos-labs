@@ -127,30 +127,32 @@ struct page_info *buddy_merge(struct page_info *page)
 	/* LAB 1: your code here. */
 	struct page_info *buddy;
 
-	if (!page->pp_free || page->pp_order == BUDDY_MAX_ORDER - 1)
-		return page;
+	buddy = NULL;
 
-	buddy = get_buddy(page);
-	if (!buddy->pp_free || buddy->pp_order != page->pp_order)
-		return page;
+	while(true) {
+        if (!page->pp_free || page->pp_order == BUDDY_MAX_ORDER - 1)
+            break;
 
-	list_remove(&page->pp_node);
-	list_remove(&buddy->pp_node);
+        buddy = get_buddy(page);
+        if (!buddy->pp_free || buddy->pp_order != page->pp_order)
+            break;
 
+        list_remove(&page->pp_node);
+        list_remove(&buddy->pp_node);
 
 /*  - page + buddy_page became one page
  *  - we want to keep the page on the left, swap if not
  */
-	if (page2pa(buddy) < page2pa(page)) {
-		struct page_info *aux = buddy;
-		buddy = page;
-		page = aux;
-	}
+        if (page2pa(buddy) < page2pa(page)) {
+            struct page_info *aux = buddy;
+            buddy = page;
+            page = aux;
+        }
 
-	page->pp_order++;
-	page = buddy_merge(page);
-	buddy->pp_free = 0;
-	page->pp_free = 1;
+        page->pp_order++;
+        page->pp_free = 1;
+        buddy->pp_free = 0;
+    }
 
 	return page;
 }
@@ -176,9 +178,9 @@ struct page_info *buddy_find(size_t req_order)
 		return NULL;
 
 //	if find exact order return it
-	list_foreach(page_free_list + req_order, node) {
+    node = list_pop(page_free_list + req_order);
+    if (node) {
 		page = container_of(node, struct page_info, pp_node);
-		list_remove(&page->pp_node);
 		return page;
 	}
 
@@ -216,7 +218,7 @@ struct page_info *page_alloc(int alloc_flags)
 	struct page_info *page;
 	size_t req_order;
 
-	req_order = alloc_flags == ALLOC_HUGE ? BUDDY_2M_PAGE : 0;
+	req_order = ((unsigned int)alloc_flags & (unsigned int)ALLOC_HUGE) ? BUDDY_2M_PAGE : 0;
 	page = buddy_find(req_order);
 
 	if (!page)
