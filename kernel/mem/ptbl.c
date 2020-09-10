@@ -38,6 +38,7 @@ int ptbl_split(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	/* LAB 2: your code here. */
+//	huge page bonus
 	return 0;
 }
 
@@ -60,6 +61,7 @@ int ptbl_merge(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	/* LAB 2: your code here. */
+//	huge page bonus
 	return 0;
 }
 
