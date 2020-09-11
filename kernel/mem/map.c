@@ -88,15 +88,12 @@ void boot_map_kernel(struct page_table *pml4, struct elf *elf_hdr)
 	/* LAB 2: your code here. */
     flags = ELF_PROG_FLAG_READ | ELF_PROG_FLAG_WRITE;
 
-//    FIXME
-//    boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, prog_hdr->p_pa, flags);
-    boot_map_region(pml4, (void *)prog_hdr->p_va, prog_hdr->p_memsz, prog_hdr->p_pa, flags);
+    boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, page2pa(pages), flags);
 
-//    FIXME
-//    for (i = prog_hdr->p_pa; i < prog_hdr->p_pa + prog_hdr->p_memsz; i += prog_hdr->p_offset) {
-//        if (i < KERNEL_VMA)
-//            continue;
-//        boot_map_region(pml4, 0, i, prog_hdr->p_pa, flags);
-//    }
+    for (i = 0; i < elf_hdr->e_phnum; i++, prog_hdr++) {
+        if (prog_hdr->p_va < KERNEL_VMA)
+            continue;
+        boot_map_region(pml4, (void *)prog_hdr->p_va, prog_hdr->p_memsz, prog_hdr->p_pa, flags);
+    }
 }
 
