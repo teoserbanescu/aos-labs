@@ -101,6 +101,53 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
     struct page_walker *walker)
 {
 	/* LAB 2: your code here. */
+
+	int ret;
+
+    uintptr_t addr_end;
+    for (int i = 0; i < 512; ++i) {
+//    for (uintptr_t addr = base; addr < end; addr = addr_end + 1) {
+//        cprintf("working\n");
+
+//        physaddr_t *entry = &pml4->entries[PML4_INDEX(addr)];
+        physaddr_t *entry = &pml4->entries[i];
+
+        pdpt_walk_range((struct page_table *)entry, base, end, walker);
+        if (!entry)
+            return 0;
+//        if (!entry)
+//            return 1;
+//        if (walker->get_pml4e) {
+//    	    pdpt_walk_range(entry, base, end, walker);
+//                if (walker->unmap_pml4e)
+//                    walker->unmap_pml4e(entry, base, end, walker);
+//        }
+
+//        addr_end = ptbl_end(addr);
+//        if (walker->get_pml4e) {
+//            ret = walker->get_pml4e(entry, addr, addr_end, walker);
+//            if (ret < 0)
+//                return ret;
+//        }
+//        if (walker->pte_hole) {
+//            ret = walker->pte_hole(base, end, walker);
+//            if (ret < 0)
+//                return ret;
+//        }
+//        panic("%p\n", entry);
+
+    }
+
+//	    if (!entry) {
+//            entry = page2pa(page_alloc(0));
+//            if (!entry)
+//                return 0;
+//        }
+//        if (walker->get_pml4e) {
+//    	    pdpt_walk_range(entry, base, end, walker);
+//                if (walker->unmap_pml4e)
+//                    walker->unmap_pml4e(entry, base, end, walker);
+//        }
 /*
  * The first level is called PML4 and the upper 9 bits of the 36 bits bits are used to find the
  * offset in the PML4 directory. The entry at that offset will point to the second level (or page directory
