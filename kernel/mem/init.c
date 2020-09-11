@@ -36,14 +36,14 @@ int pml4_setup(struct boot_info *boot_info)
 	 * stack. The kernel stack grows down from virtual address KSTACK_TOP.
 	 * Map 'bootstack' to [KSTACK_TOP - KSTACK_SIZE, KSTACK_TOP).
 	 */
-//	FIXME
-//    boot_map_region(kernel_pml4, bootstack, KSTACK_SIZE,  KSTACK_TOP, MSR_EFER_NXE);
+    boot_map_region(kernel_pml4, bootstack, KSTACK_SIZE,  KSTACK_TOP, 0);
 
 	/* Map in the pages from the buddy allocator as RW-. */
+    boot_map_region(kernel_pml4, pages, npages,  page2pa(pages), PAGE_PRESENT | PAGE_WRITE);
 
-	/* Migrate the struct page_info structs to the newly mapped area using
-	 * buddy_migrate().
-	 */
+    /* Migrate the struct page_info structs to the newly mapped area using
+     * buddy_migrate().
+     */
 	buddy_migrate();
 
 	return 0;
@@ -119,6 +119,10 @@ void mem_init(struct boot_info *boot_info)
 
 	/* Check the kernel PML4. */
 	lab2_check_pml4();
+
+#ifdef DEBUG
+    dump_page_tables(kernel_pml4, PAGE_SIZE);
+#endif
 
 	/* Load the kernel PML4. */
     load_pml4((struct page_table *)PADDR(kernel_pml4));
