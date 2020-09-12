@@ -50,7 +50,7 @@ static int ptbl_walk_range(struct page_table *ptbl, uintptr_t base,
 	/* LAB 2: your code here. */
     int ret;
 
-    for (int i = PAGE_TABLE_INDEX(base); i < PAGE_TABLE_INDEX(end); ++i) {
+    for (int i = PAGE_TABLE_INDEX(base); i <= PAGE_TABLE_INDEX(end); ++i) {
         physaddr_t *entry = &ptbl->entries[i];
 
         if (walker->get_pte) {
@@ -86,12 +86,15 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
 {
 	/* LAB 2: your code here. */
     int ret;
+    uintptr_t addr, addr_end;
+    addr = base;
+    addr_end = pdir_end(addr);
 
-    for (int i = PAGE_DIR_INDEX(base); i < PAGE_DIR_INDEX(end); ++i) {
+    for (int i = PAGE_DIR_INDEX(base); i <= PAGE_DIR_INDEX(end); ++i) {
         physaddr_t *entry = &pdir->entries[i];
 
         if (walker->get_pde) {
-            ret = walker->get_pde(entry, base, end, walker);
+            ret = walker->get_pde(entry, addr, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
@@ -99,7 +102,7 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
         if (walker->pte_hole &&
             (!(*entry & PAGE_PRESENT)) // should we check !entry ?
                 ) {
-            ret = walker->pte_hole(base, end, walker);
+            ret = walker->pte_hole(addr, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
@@ -107,15 +110,18 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
         if ((*entry & PAGE_PRESENT) &&
             !(*entry & PAGE_HUGE)
                 ) { // should we check entry ?
-            ret = ptbl_walk_range((struct page_table *)entry, base, end, walker);
+            ret = ptbl_walk_range((struct page_table *)entry, addr, addr_end, walker);
             if (ret < 0)
                 return ret;
             if (walker->unmap_pde) {
-                ret = walker->unmap_pde(entry, base, end, walker);
+                ret = walker->unmap_pde(entry, addr, addr_end, walker);
                 if (ret < 0)
                     return ret;
             }
         }
+
+        addr = addr_end + 1;
+        addr_end = pdir_end(addr);
     }
 
 	return 0;
@@ -137,12 +143,17 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
 {
 	/* LAB 2: your code here. */
     int ret;
+    uintptr_t addr, addr_end;
+    addr = base;
+    addr_end = pdpt_end(addr);
 
-    for (int i = PDPT_INDEX(base); i < PDPT_INDEX(end); ++i) {
+    for (int i = PDPT_INDEX(base); i <= PDPT_INDEX(end); ++i) {
         physaddr_t *entry = &pdpt->entries[i];
 
+        ptbl_alloc(entry, addr, addr_end, walker);
+
         if (walker->get_pdpte) {
-            ret = walker->get_pdpte(entry, base, end, walker);
+            ret = walker->get_pdpte(entry, addr, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
@@ -150,7 +161,7 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
         if (walker->pte_hole &&
             (!(*entry & PAGE_PRESENT)) // should we check !entry ?
                 ) {
-            ret = walker->pte_hole(base, end, walker);
+            ret = walker->pte_hole(addr, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
@@ -158,15 +169,20 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
         if ((*entry & PAGE_PRESENT) &&
             !(*entry & PAGE_HUGE)
             ) { // should we check entry ?
-            ret = pdir_walk_range((struct page_table *)entry, base, end, walker);
+
+            
+            ret = pdir_walk_range((struct page_table *) PAGE_ADDR(*entry), addr, addr_end, walker);
             if (ret < 0)
                 return ret;
             if (walker->unmap_pdpte) {
-                ret = walker->unmap_pdpte(entry, base, end, walker);
+                ret = walker->unmap_pdpte(entry, addr, addr_end, walker);
                 if (ret < 0)
                     return ret;
             }
         }
+
+        addr = addr_end + 1;
+        addr_end = pdpt_end(addr);
     }
 	return 0;
 }
@@ -186,34 +202,39 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
 {
 	/* LAB 2: your code here. */
 	int ret;
+    uintptr_t addr, addr_end;
+    addr = base;
+    addr_end = pml4_end(addr);
 
-    for (int i = PML4_INDEX(base); i < PML4_INDEX(end); ++i) {
+    for (int i = PML4_INDEX(base); i <= PML4_INDEX(end); ++i) {
         physaddr_t *entry = &pml4->entries[i];
 
+        ptbl_alloc(entry, addr, addr_end, walker);
+
         if (walker->get_pml4e) {
-            ret = walker->get_pml4e(entry, base, end, walker);
+            ret = walker->get_pml4e(entry, addr, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
 
-        if (walker->pte_hole &&
-            (!(*entry & PAGE_PRESENT)) // should we check !entry ?
-            ) {
-            ret = walker->pte_hole(base, end, walker);
-            if (ret < 0)
-                return ret;
-        }
-
-        if ((*entry & PAGE_PRESENT)) { // should we check entry ?
-            ret = pdpt_walk_range((struct page_table *)entry, base, end, walker);
+        if (*entry & PAGE_PRESENT) { // should we check entry ?
+            ret = pdpt_walk_range((struct page_table *) PAGE_ADDR(*entry), addr, addr_end, walker);
             if (ret < 0)
                 return ret;
             if (walker->unmap_pml4e) {
-                ret = walker->unmap_pml4e(entry, base, end, walker);
+                ret = walker->unmap_pml4e(entry, addr, addr_end, walker);
                 if (ret < 0)
                     return ret;
             }
         }
+        else if (walker->pte_hole) {
+            ret = walker->pte_hole(addr, addr_end, walker);
+            if (ret < 0)
+                return ret;
+        }
+
+        addr = addr_end + 1;
+        addr_end = pml4_end(addr);
     }
 
 	return 0;

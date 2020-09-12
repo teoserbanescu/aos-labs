@@ -14,6 +14,16 @@ int ptbl_alloc(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	/* LAB 2: your code here. */
+    struct page_info *page;
+
+	if (!entry) {
+	    return 0;
+	}
+	else {
+        page = page_alloc(ALLOC_ZERO);
+        page->pp_ref++;
+        *entry = page2pa(page) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
+	}
 	return 0;
 }
 
@@ -38,7 +48,12 @@ int ptbl_split(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	/* LAB 2: your code here. */
-//	huge page bonus
+    if (*entry & (PAGE_HUGE | PAGE_PRESENT)) {
+
+    }
+    else {
+//        *entry = page_alloc(0);
+    }
 	return 0;
 }
 
