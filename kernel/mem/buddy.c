@@ -185,11 +185,10 @@ struct page_info *buddy_find(size_t req_order)
 	}
 
 	for (size_t order = req_order + 1; order < BUDDY_MAX_ORDER; ++order){
-		node = list_head(page_free_list + order);
+		node = list_pop(page_free_list + order);
 		if (node) {
 			big_page = container_of(node, struct page_info, pp_node);
 			page = buddy_split(big_page, req_order);
-			list_remove(&big_page->pp_node);
 			return page;
 		}
 	}

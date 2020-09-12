@@ -99,7 +99,7 @@ void boot_map_kernel(struct page_table *pml4, struct elf *elf_hdr)
 	/* LAB 2: your code here. */
     flags = PAGE_PRESENT | PAGE_WRITE;
 
-    boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, page2pa(pages), flags);
+//    boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, page2pa(), flags);
 
     for (i = 0; i < elf_hdr->e_phnum; i++, prog_hdr++) {
         if (prog_hdr->p_va < KERNEL_VMA)
