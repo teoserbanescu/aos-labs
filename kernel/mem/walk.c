@@ -63,15 +63,13 @@ static int ptbl_walk_range(struct page_table *ptbl, uintptr_t base,
                 return ret;
         }
 
-        if (walker->pte_hole &&
-            (!(*entry & PAGE_PRESENT)) // should we check !entry ?
-                ) {
+        if (walker->pte_hole && (!(*entry & PAGE_PRESENT))) {
             ret = walker->pte_hole(addr, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
 
-        addr = base;
+        addr = addr_end + 1;
         addr_end = MIN(end, ptbl_end(addr));
     }
 	return 0;
@@ -111,25 +109,22 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
 
         ptbl = (struct page_table *) KADDR(PAGE_ADDR(*entry));
 
-        if (walker->pte_hole &&
-            (!(*entry & PAGE_PRESENT)) // should we check !entry ?
-                ) {
+        if (*entry & PAGE_PRESENT) {
+            if (!(*entry & PAGE_HUGE)) {
+                ret = ptbl_walk_range(ptbl, addr, addr_end, walker);
+                if (ret < 0)
+                    return ret;
+                if (walker->unmap_pde) {
+                    ret = walker->unmap_pde(entry, addr, addr_end, walker);
+                    if (ret < 0)
+                        return ret;
+                }
+            }
+        }
+        else if (walker->pte_hole) {
             ret = walker->pte_hole(addr, addr_end, walker);
             if (ret < 0)
                 return ret;
-        }
-
-        if ((*entry & PAGE_PRESENT) &&
-            !(*entry & PAGE_HUGE)
-                ) { // should we check entry ?
-            ret = ptbl_walk_range(ptbl, addr, addr_end, walker);
-            if (ret < 0)
-                return ret;
-            if (walker->unmap_pde) {
-                ret = walker->unmap_pde(entry, addr, addr_end, walker);
-                if (ret < 0)
-                    return ret;
-            }
         }
 
         addr = addr_end + 1;
@@ -172,25 +167,22 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
 
         pdir = (struct page_table *) KADDR(PAGE_ADDR(*entry));
 
-        if (walker->pte_hole &&
-            (!(*entry & PAGE_PRESENT)) // should we check !entry ?
-                ) {
+        if (*entry & PAGE_PRESENT) {
+            if (!(*entry & PAGE_HUGE)) {
+                ret = pdir_walk_range(pdir, addr, addr_end, walker);
+                if (ret < 0)
+                    return ret;
+                if (walker->unmap_pdpte) {
+                    ret = walker->unmap_pdpte(entry, addr, addr_end, walker);
+                    if (ret < 0)
+                        return ret;
+                }
+            }
+        }
+        else if (walker->pte_hole) {
             ret = walker->pte_hole(addr, addr_end, walker);
             if (ret < 0)
                 return ret;
-        }
-
-        if ((*entry & PAGE_PRESENT) &&
-            !(*entry & PAGE_HUGE)
-            ) {
-            ret = pdir_walk_range(pdir, addr, addr_end, walker);
-            if (ret < 0)
-                return ret;
-            if (walker->unmap_pdpte) {
-                ret = walker->unmap_pdpte(entry, addr, addr_end, walker);
-                if (ret < 0)
-                    return ret;
-            }
         }
 
         addr = addr_end + 1;

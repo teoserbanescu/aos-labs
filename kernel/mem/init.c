@@ -120,9 +120,9 @@ void mem_init(struct boot_info *boot_info)
 	/* Check the kernel PML4. */
 	lab2_check_pml4();
 
-#ifdef DEBUG
-    dump_page_tables(kernel_pml4, PAGE_SIZE);
-#endif
+//#ifdef DEBUG
+    dump_page_tables(kernel_pml4, 0);
+//#endif
 
 	/* Load the kernel PML4. */
     load_pml4((struct page_table *)PADDR(kernel_pml4));
