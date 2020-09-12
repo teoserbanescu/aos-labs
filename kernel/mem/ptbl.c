@@ -16,13 +16,13 @@ int ptbl_alloc(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	/* LAB 2: your code here. */
     struct page_info *page;
 
-	if (!entry) {
+	if (*entry) {
 	    return 0;
 	}
 	else {
         page = page_alloc(ALLOC_ZERO);
         page->pp_ref++;
-        *entry = page2pa(page) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
+        *entry = PADDR(page) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
 	}
 	return 0;
 }

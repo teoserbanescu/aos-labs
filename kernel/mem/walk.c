@@ -202,6 +202,7 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
 {
 	/* LAB 2: your code here. */
 	int ret;
+    struct page_table *pdpt;
     uintptr_t addr, addr_end;
     addr = base;
     addr_end = pml4_end(addr);
@@ -210,7 +211,7 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
         physaddr_t *entry = &pml4->entries[i];
 
         ptbl_alloc(entry, addr, addr_end, walker);
-
+        pdpt = (struct page_table *) pa2page(PAGE_ADDR(*entry));
         if (walker->get_pml4e) {
             ret = walker->get_pml4e(entry, addr, addr_end, walker);
             if (ret < 0)
@@ -218,7 +219,7 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
         }
 
         if (*entry & PAGE_PRESENT) { // should we check entry ?
-            ret = pdpt_walk_range((struct page_table *) PAGE_ADDR(*entry), addr, addr_end, walker);
+            ret = pdpt_walk_range(pdpt, addr, addr_end, walker);
             if (ret < 0)
                 return ret;
             if (walker->unmap_pml4e) {
@@ -228,7 +229,7 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
             }
         }
         else if (walker->pte_hole) {
-            ret = walker->pte_hole(addr, addr_end, walker);
+            ret = walker->pte_hole(*entry, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
