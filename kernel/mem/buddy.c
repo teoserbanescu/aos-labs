@@ -189,7 +189,7 @@ struct page_info *buddy_find(size_t req_order)
 		if (node) {
 			big_page = container_of(node, struct page_info, pp_node);
 			page = buddy_split(big_page, req_order);
-			list_remove(&page->pp_node);
+			list_remove(&big_page->pp_node);
 			return page;
 		}
 	}

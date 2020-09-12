@@ -45,13 +45,10 @@ void *boot_alloc(uint32_t n)
 		next_free = ROUNDUP((char *)(next_free + n), PAGE_SIZE);
 	}
 
-
 	// Overflow means we are out of memory.
 	if (next_free < result) {
 		panic("[boot_alloc] Ran out of memory.");
 	}
-
-	result = next_free;
 
 	return result;
 }
