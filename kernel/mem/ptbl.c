@@ -21,8 +21,9 @@ int ptbl_alloc(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	}
 	else {
         page = page_alloc(ALLOC_ZERO);
+        //        FIXME panic or return < 0 if no mem available
         page->pp_ref++;
-        *entry = PADDR(page) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
+        *entry = page2pa(page) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
 	}
 	return 0;
 }
@@ -52,7 +53,7 @@ int ptbl_split(physaddr_t *entry, uintptr_t base, uintptr_t end,
 
     }
     else {
-//        *entry = page_alloc(0);
+        ptbl_alloc(entry, base, end, walker);
     }
 	return 0;
 }

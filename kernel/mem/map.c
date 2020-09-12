@@ -19,7 +19,8 @@ static int boot_map_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct boot_map_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
-    *entry = info->pa | info->flags;
+    //	    FIXME SHIFT ADDR
+    *entry = (info->pa + 0x1000) | info->flags;
     info->pa++;
 	return 0;
 }
@@ -36,11 +37,12 @@ static int boot_map_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct boot_map_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
-	*entry = info->pa | info->flags;
 	if (hpage_aligned(*entry) &&
 	    end - base >= HPAGE_SIZE
 	    ) {
-	    info->pa++;
+//	    FIXME SHIFT ADDR
+        *entry = (info->pa + 0x1000) | info->flags;
+        info->pa++;
 	}
 	else {
         return ptbl_split(entry, base, end, walker);
