@@ -19,8 +19,7 @@ static int boot_map_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct boot_map_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
-    //	    FIXME SHIFT ADDR
-    *entry = (info->pa + 0x1000) | info->flags;
+    *entry = (info->pa << 12) | info->flags;
     info->pa++;
 	return 0;
 }
@@ -40,8 +39,7 @@ static int boot_map_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	if (hpage_aligned(*entry) &&
 	    end - base >= HPAGE_SIZE
 	    ) {
-//	    FIXME SHIFT ADDR
-        *entry = (info->pa + 0x1000) | info->flags;
+        *entry = (info->pa << 12) | info->flags;
         info->pa++;
 	}
 	else {
