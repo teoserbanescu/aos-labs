@@ -164,14 +164,13 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
         struct page_table *pdir;
         physaddr_t *entry = &pdpt->entries[i];
 
-        ptbl_alloc(entry, addr, addr_end, walker);
-        pdir = (struct page_table *) KADDR(PAGE_ADDR(*entry));
-
         if (walker->get_pdpte) {
             ret = walker->get_pdpte(entry, addr, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
+
+        pdir = (struct page_table *) KADDR(PAGE_ADDR(*entry));
 
         if (walker->pte_hole &&
             (!(*entry & PAGE_PRESENT)) // should we check !entry ?
@@ -223,14 +222,13 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
         struct page_table *pdpt;
         physaddr_t *entry = &pml4->entries[i];
 
-        ptbl_alloc(entry, addr, addr_end, walker);
-        pdpt = (struct page_table *) KADDR(PAGE_ADDR(*entry));
-
         if (walker->get_pml4e) {
             ret = walker->get_pml4e(entry, addr, addr_end, walker);
             if (ret < 0)
                 return ret;
         }
+
+        pdpt = (struct page_table *) KADDR(PAGE_ADDR(*entry));
 
         if (*entry & PAGE_PRESENT) { // should we check entry ?
             ret = pdpt_walk_range(pdpt, addr, addr_end, walker);

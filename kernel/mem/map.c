@@ -48,6 +48,18 @@ static int boot_map_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	return 0;
 }
 
+static int boot_map_pdpte(physaddr_t *entry, uintptr_t base, uintptr_t end,
+                          struct page_walker *walker)
+{
+    return ptbl_alloc(entry, base, end, walker);
+}
+
+static int boot_map_pml4e(physaddr_t *entry, uintptr_t base, uintptr_t end,
+                        struct page_walker *walker)
+{
+    return ptbl_alloc(entry, base, end, walker);
+}
+
 /*
  * Maps the virtual address space at [va, va + size) to the contiguous physical
  * address space at [pa, pa + size). Size is a multiple of PAGE_SIZE. The
@@ -71,6 +83,8 @@ void boot_map_region(struct page_table *pml4, void *va, size_t size,
 	struct page_walker walker = {
 		.get_pte = boot_map_pte,
 		.get_pde = boot_map_pde,
+        .get_pdpte = boot_map_pdpte,
+		.get_pml4e = boot_map_pml4e,
 		.udata = &info,
 	};
 
@@ -99,7 +113,7 @@ void boot_map_kernel(struct page_table *pml4, struct elf *elf_hdr)
 	/* LAB 2: your code here. */
     flags = PAGE_PRESENT | PAGE_WRITE;
 
-//    boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, page2pa(), flags);
+    boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, PADDR((void *)KERNEL_VMA), flags);
 
     for (i = 0; i < elf_hdr->e_phnum; i++, prog_hdr++) {
         if (prog_hdr->p_va < KERNEL_VMA)

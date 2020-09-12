@@ -39,7 +39,7 @@ int pml4_setup(struct boot_info *boot_info)
     boot_map_region(kernel_pml4, (void *)(KSTACK_TOP-KSTACK_SIZE), KSTACK_SIZE, (physaddr_t)bootstack , PAGE_PRESENT);
 
 	/* Map in the pages from the buddy allocator as RW-. */
-    boot_map_region(kernel_pml4, page2kva(pages), npages * PAGE_SIZE,  page2pa(pages), PAGE_PRESENT | PAGE_WRITE);
+    boot_map_region(kernel_pml4, page2kva(pages), npages * PAGE_SIZE,  page2pa(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 
     /* Migrate the struct page_info structs to the newly mapped area using
      * buddy_migrate().
