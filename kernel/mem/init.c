@@ -71,8 +71,12 @@ void mem_init(struct boot_info *boot_info)
 	page_init(boot_info);
 
 	/* Perform the tests of lab 1. */
-	lab1_check_mem(boot_info);
+//	lab1_check_mem(boot_info);
 
+	while(true) {
+	    show_buddy_info();
+	    page_alloc(ALLOC_ZERO);
+	}
 	/* We will set up page tables here in lab 2. */
 }
 
