@@ -39,9 +39,8 @@ static int remove_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page;
 
 	/* LAB 2: your code here. */
-    if (!(*entry & PAGE_PRESENT & PAGE_HUGE)) {
+    if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE))
         return 0;
-    }
 
     // FIXME implement remove huge page
 	return 0;
