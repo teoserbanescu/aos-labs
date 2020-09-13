@@ -93,7 +93,7 @@ int page_insert(struct page_table *pml4, struct page_info *page, void *va,
             .pml4 = pml4,
             // PAGE_PRESENT should always be set
             .flags = flags | PAGE_PRESENT,
-    }
+    };
     struct page_walker walker = {
 		.get_pte = insert_pte,
 		.get_pde = insert_pde,
