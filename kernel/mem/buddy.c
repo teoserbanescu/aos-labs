@@ -74,7 +74,7 @@ size_t count_total_free_pages(void)
 }
 
 struct page_info *get_buddy(struct page_info *page) {
-	return pages + ((uint64_t)(page - pages) ^ ((uint64_t)1 << page->pp_order));
+	return pa2page(page2pa(pages) + ((uint64_t)(page2pa(page) - page2pa(pages)) ^ ((uint64_t)1 << page->pp_order)));
 }
 
 /* Splits lhs into free pages until the order of the page is the requested
@@ -100,6 +100,7 @@ struct page_info *buddy_split(struct page_info *lhs, size_t req_order)
 	buddy = get_buddy(lhs);
 	buddy->pp_order = lhs->pp_order;
 	buddy->pp_free = 1;
+    lhs->pp_free = 1;
 
 	list_push(page_free_list + buddy->pp_order, &buddy->pp_node);
 
@@ -152,6 +153,7 @@ struct page_info *buddy_merge(struct page_info *page)
         page->pp_order++;
         page->pp_free = 1;
         buddy->pp_free = 0;
+        buddy->pp_order = 0;
     }
 
 	return page;
@@ -170,7 +172,11 @@ struct page_info *buddy_find(size_t req_order)
 
 	struct list *node;
 	struct page_info *page, *big_page;
-
+#ifdef DEBUG
+	static int x = 0;
+	cprintf("%d\n", x++);
+	show_buddy_info();
+#endif
 	page = NULL;
 	big_page = NULL;
 
@@ -178,14 +184,14 @@ struct page_info *buddy_find(size_t req_order)
 		return NULL;
 
 //	if find exact order return it
-    node = list_pop(page_free_list + req_order);
+    node = list_head(page_free_list + req_order);
     if (node) {
 		page = container_of(node, struct page_info, pp_node);
 		return page;
 	}
 
 	for (size_t order = req_order + 1; order < BUDDY_MAX_ORDER; ++order){
-		node = list_pop(page_free_list + order);
+		node = list_head(page_free_list + order);
 		if (node) {
 			big_page = container_of(node, struct page_info, pp_node);
 			page = buddy_split(big_page, req_order);
@@ -219,6 +225,8 @@ struct page_info *page_alloc(int alloc_flags)
 
 	req_order = ((unsigned int)alloc_flags & (unsigned int)ALLOC_HUGE) ? BUDDY_2M_PAGE : BUDDY_4K_PAGE;
 	page = buddy_find(req_order);
+    list_remove(&page->pp_node);
+    page->pp_free = 0;
 
 	if (!page)
 		panic("out of free memory");

@@ -19,7 +19,7 @@ static int boot_map_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct boot_map_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
-    *entry = (info->pa << 12) | info->flags;
+    *entry = PAGE_ADDR(info->pa + base - info->base) | info->flags;
     info->pa++;
 	return 0;
 }
@@ -36,10 +36,8 @@ static int boot_map_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct boot_map_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
-	if (hpage_aligned(*entry) &&
-	    end - base >= HPAGE_SIZE
-	    ) {
-        *entry = (info->pa << 12) | info->flags;
+	if (hpage_aligned(*entry) && (*entry & PAGE_PRESENT) && end - base + 1 == HPAGE_SIZE) {
+        *entry = PAGE_ADDR(info->pa + base - info->base) | info->flags | PAGE_HUGE;
         info->pa++;
 	}
 	else {
@@ -99,17 +97,18 @@ void boot_map_kernel(struct page_table *pml4, struct elf *elf_hdr)
 	size_t i;
 
 	/* LAB 2: your code here. */
-    struct elf_proghdr *eph = prog_hdr + elf_hdr->e_phnum;
+//    struct elf_proghdr *eph = prog_hdr + elf_hdr->e_phnum;
     flags = PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC;
 
     boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, PADDR((void *)KERNEL_VMA), flags);
 
-    for (; prog_hdr < eph; prog_hdr++) {
-//    for (i = 0; i < elf_hdr->e_phnum; ++i, ++prog_hdr) {
+//    for (; prog_hdr < eph; prog_hdr++) {
+    for (i = 0; i < elf_hdr->e_phnum; ++i, ++prog_hdr) {
         if (prog_hdr->p_va < KERNEL_VMA)
             continue;
         flags = PAGE_PRESENT;
         flags |= (prog_hdr->p_flags & ELF_PROG_FLAG_WRITE) ? PAGE_WRITE : 0;
+//        flags |= (prog_hdr->p_flags & ELF_PROG_FLAG_READ) ? PAGE_PRESENT : 0;
         flags |= !(prog_hdr->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
         boot_map_region(pml4, (void*)prog_hdr->p_va, prog_hdr->p_memsz , prog_hdr->p_pa, flags);
     }

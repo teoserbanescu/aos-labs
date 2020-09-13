@@ -39,8 +39,8 @@ int pml4_setup(struct boot_info *boot_info)
     boot_map_region(kernel_pml4, (void *)(KSTACK_TOP-KSTACK_SIZE), KSTACK_SIZE, (physaddr_t)bootstack , PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 
 	/* Map in the pages from the buddy allocator as RW-. */
-//    boot_map_region(kernel_pml4, page2kva(pages), npages * (sizeof *pages),  page2pa(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
-    boot_map_region(kernel_pml4, (void*)0xffffff8000000000, 0x800000, page2pa(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+    boot_map_region(kernel_pml4, (void *)KPAGES, npages * (sizeof *pages),  page2pa(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+//    boot_map_region(kernel_pml4, (void*)0xffffff8000000000, 0x800000, page2pa(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 
     /* Migrate the struct page_info structs to the newly mapped area using
      * buddy_migrate().
@@ -101,7 +101,10 @@ void mem_init(struct boot_info *boot_info)
 	 * 'npages' is the number of physical pages in memory.  Your code goes here.
 	 */
 	pages = boot_alloc(npages * sizeof *pages);
-
+#ifdef DEBUG
+    cprintf("pages %p\n", pages);
+    cprintf("pages %p\n", boot_alloc(0));
+#endif
 	/*
 	 * Now that we've allocated the initial kernel data structures, we set
 	 * up the list of free physical pages. Once we've done so, all further
