@@ -1,0 +1,11 @@
+We implemented the logic for page table management but we are not able to test it,
+as we encounter multiple bugs in the first part of the initialization.
+
+Unfortunately, we are stuck fixing some of the issues. One big issue that we had was
+that the kernel was failing everytime when loading cr3. It turned out that we had
+a problem in the boot allocator which caused many issues in the allocated pages.
+
+The pages are still not correct, even though tests for lab 1 pass.
+
+We will continue to work on it and hopefully fix it soon, but have decided to submit
+what we have now, too.
