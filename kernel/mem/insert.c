@@ -21,7 +21,14 @@ static int insert_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page;
 
 	/* LAB 2: your code here. */
-//	tlb_invalidate(info->pml4, )
+	if (!(*entry & PAGE_PRESENT)) {
+	    // Page is not already present, insert
+
+	} else {
+	    // PTE already points to a present page
+	    page_decref(pa2page(PAGE_ADDR(*entry)));
+        tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
+	}
 
 	return 0;
 }
@@ -40,6 +47,14 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page;
 
 	/* LAB 2: your code here. */
+    if (!(*entry & PAGE_PRESENT & PAGE_HUGE)) {
+        // Page is not already present, insert
+
+    } else {
+        // PTE already points to a present page
+        page_decref(pa2page(PAGE_ADDR(*entry)));
+        tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
+    }
 
 	return 0;
 }
@@ -72,9 +87,14 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 int page_insert(struct page_table *pml4, struct page_info *page, void *va,
     uint64_t flags)
 {
-	/* LAB 2: your code here. */
-	struct insert_info info;
-	struct page_walker walker = {
+    /* LAB 2: your code here. */
+    struct insert_info info = {
+            .page = page,
+            .pml4 = pml4,
+            // PAGE_PRESENT should always be set
+            .flags = flags | PAGE_PRESENT,
+    }
+    struct page_walker walker = {
 		.get_pte = insert_pte,
 		.get_pde = insert_pde,
 		.get_pdpte = ptbl_alloc,
@@ -82,19 +102,13 @@ int page_insert(struct page_table *pml4, struct page_info *page, void *va,
 		.udata = &info,
 	};
 
-//    info.flags = flags | PAGE_PRESENT;
-//    page_decref(page2pa(page))
-//    tlb_invalidate(va)
-
     if (walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE),
 		&walker) < 0) {
         return -1;
     }
 
-    //
     // tlb_invalidate(pml4, va);
-
-    page->pp_ref++;
+    // page->pp_ref++;
     return 0;
 }
 
