@@ -104,7 +104,9 @@ int page_insert(struct page_table *pml4, struct page_info *page, void *va,
     };
     struct page_walker walker = {
 		.get_pte = insert_pte,
-		.get_pde = insert_pde,
+		// FIXME support huge pages
+		.get_pde = ptbl_alloc,
+//		.get_pde = insert_pde,
 		.get_pdpte = ptbl_alloc,
 		.get_pml4e = ptbl_alloc,
 		.udata = &info,
