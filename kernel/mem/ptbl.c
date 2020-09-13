@@ -108,8 +108,7 @@ int ptbl_free(physaddr_t *entry, uintptr_t base, uintptr_t end,
             return 0;
         }
     }
-    // FIXME use page_decref?
-    page_free(page);
-//    *entry = 0;
+    page_decref(page);
+    *entry = 0;
 	return 0;
 }

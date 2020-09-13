@@ -17,6 +17,15 @@ static int remove_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page;
 
 	/* LAB 2: your code here. */
+	if (!(*entry & PAGE_PRESENT))
+	    return 0;
+
+	page = pa2page(PAGE_ADDR(*entry));
+	page_decref(page);
+	tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
+	// Clear out the page table entry.
+	*entry = 0;
+
 	return 0;
 }
 
@@ -30,6 +39,11 @@ static int remove_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page;
 
 	/* LAB 2: your code here. */
+    if (!(*entry & PAGE_PRESENT & PAGE_HUGE)) {
+        return 0;
+    }
+
+    // FIXME implement remove huge page
 	return 0;
 }
 
@@ -40,9 +54,14 @@ void unmap_page_range(struct page_table *pml4, void *va, size_t size)
 	struct remove_info info = {
 		.pml4 = pml4,
 	};
+	// FIXME is this walker good?
 	struct page_walker walker = {
 		.get_pte = remove_pte,
 		.get_pde = remove_pde,
+		.unmap_pte = remove_pte,
+		.unmap_pde = ptbl_free,
+		.unmap_pdpte = ptbl_free,
+		.unmap_pml4e = ptbl_free,
 		.udata = &info,
 	};
 
