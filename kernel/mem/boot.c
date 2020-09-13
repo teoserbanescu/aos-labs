@@ -50,7 +50,9 @@ void *boot_alloc(uint32_t n)
 		panic("[boot_alloc] Ran out of memory.");
 	}
 
-	return result;
+    result = next_free;
+
+    return result;
 }
 
 /* The addresses and lengths in the memory map provided by the boot loader may

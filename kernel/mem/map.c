@@ -104,8 +104,8 @@ void boot_map_kernel(struct page_table *pml4, struct elf *elf_hdr)
 
     boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, PADDR((void *)KERNEL_VMA), flags);
 
-//    for (; prog_hdr < eph; prog_hdr++) {
-    for (i = 0; i < elf_hdr->e_phnum; ++i, ++prog_hdr) {
+    for (; prog_hdr < eph; prog_hdr++) {
+//    for (i = 0; i < elf_hdr->e_phnum; ++i, ++prog_hdr) {
         if (prog_hdr->p_va < KERNEL_VMA)
             continue;
         flags = PAGE_PRESENT;
@@ -113,5 +113,8 @@ void boot_map_kernel(struct page_table *pml4, struct elf *elf_hdr)
         flags |= !(prog_hdr->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
         boot_map_region(pml4, (void*)prog_hdr->p_va, prog_hdr->p_memsz , prog_hdr->p_pa, flags);
     }
+//    boot_map_region(pml4, (void*)0xffff80000010c000, 0x7000, (uintptr_t)0x10c000, PAGE_PRESENT | PAGE_NO_EXEC);
+//    boot_map_region(pml4, (void*)0xffff800000113000, 0x4000 , 0x113000, PAGE_PRESENT);
+
 }
 
