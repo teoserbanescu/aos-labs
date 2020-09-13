@@ -227,12 +227,15 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
 static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
+    cprintf("base %p end %p pml4_walk_range\n", base, end);
+
 	/* LAB 2: your code here. */
 	int ret;
     uintptr_t addr, addr_end;
     addr = sign_extend(base);
     end = sign_extend(end);
     addr_end = MIN(end, pml4_end(addr));
+
 
     while (addr < end) {
         int i = PML4_INDEX(addr);
