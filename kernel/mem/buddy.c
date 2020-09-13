@@ -75,6 +75,7 @@ size_t count_total_free_pages(void)
 
 struct page_info *get_buddy(struct page_info *page) {
 	return pages + ((uint64_t)(page - pages) ^ ((uint64_t)1 << page->pp_order));
+//    return pa2page(page2pa(page) ^ ((uint64_t)1 << (page->pp_order+PAGE_TABLE_SHIFT)));
 }
 
 /* Splits lhs into free pages until the order of the page is the requested
@@ -149,12 +150,12 @@ struct page_info *buddy_merge(struct page_info *page)
             page = aux;
         }
 
+
         page->pp_order++;
         page->pp_free = 1;
         buddy->pp_free = 0;
         buddy->pp_order = 0;
     }
-
 	return page;
 }
 
