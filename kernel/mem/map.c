@@ -100,7 +100,7 @@ void boot_map_kernel(struct page_table *pml4, struct elf *elf_hdr)
 
 	/* LAB 2: your code here. */
     struct elf_proghdr *eph = prog_hdr + elf_hdr->e_phnum;
-    flags = PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC;
+    flags = PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
 
     boot_map_region(pml4, (void *)KERNEL_VMA, BOOT_MAP_LIM, PADDR((void *)KERNEL_VMA), flags);
 

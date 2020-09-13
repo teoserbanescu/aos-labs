@@ -50,11 +50,12 @@ static int ptbl_walk_range(struct page_table *ptbl, uintptr_t base,
 	/* LAB 2: your code here. */
     int ret;
     uintptr_t addr, addr_end;
+    addr = sign_extend(base);
+    end = sign_extend(end);
+    addr_end = pml4_end(addr);
 
-    addr = base;
-    addr_end = MIN(end, ptbl_end(addr));
-
-    for (int i = PAGE_TABLE_INDEX(base); i <= PAGE_TABLE_INDEX(end); ++i) {
+    while (addr < end) {
+        int i = PML4_INDEX(addr);
         physaddr_t *entry = &ptbl->entries[i];
 
         if (walker->get_pte) {
@@ -69,8 +70,11 @@ static int ptbl_walk_range(struct page_table *ptbl, uintptr_t base,
                 return ret;
         }
 
-        addr = addr_end + 1;
-        addr_end = MIN(end, ptbl_end(addr));
+        if (addr_end == KERNEL_LIM)
+            break;
+
+        addr = sign_extend(addr_end + 1);
+        addr_end = pml4_end(addr);
     }
 	return 0;
 }
@@ -92,11 +96,12 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
 	/* LAB 2: your code here. */
     int ret;
     uintptr_t addr, addr_end;
+    addr = sign_extend(base);
+    end = sign_extend(end);
+    addr_end = pml4_end(addr);
 
-    addr = base;
-    addr_end = MIN(end, pdir_end(addr));
-
-    for (int i = PAGE_DIR_INDEX(base); i <= PAGE_DIR_INDEX(end); ++i) {
+    while (addr < end) {
+        int i = PML4_INDEX(addr);
         struct page_table *ptbl;
         physaddr_t *entry = &pdir->entries[i];
 
@@ -127,8 +132,11 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
                 return ret;
         }
 
-        addr = addr_end + 1;
-        addr_end = MIN(end, pdir_end(addr));
+        if (addr_end == KERNEL_LIM)
+            break;
+
+        addr = sign_extend(addr_end + 1);
+        addr_end = pml4_end(addr);
     }
 
 	return 0;
@@ -151,11 +159,12 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
 	/* LAB 2: your code here. */
     int ret;
     uintptr_t addr, addr_end;
+    addr = sign_extend(base);
+    end = sign_extend(end);
+    addr_end = pml4_end(addr);
 
-    addr = base;
-    addr_end = MIN(end, pdpt_end(addr));
-
-    for (int i = PDPT_INDEX(base); i <= PDPT_INDEX(end); ++i) {
+    while (addr < end) {
+        int i = PML4_INDEX(addr);
         struct page_table *pdir;
         physaddr_t *entry = &pdpt->entries[i];
 
@@ -185,6 +194,8 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
                 return ret;
         }
 
+        if (addr_end == KERNEL_LIM)
+            break;
         addr = addr_end + 1;
         addr_end = MIN(end, pdpt_end(addr));
     }
@@ -207,12 +218,16 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
 	/* LAB 2: your code here. */
 	int ret;
     uintptr_t addr, addr_end;
-    addr = base;
-    addr_end = MIN(end, pml4_end(addr));
+    addr = sign_extend(base);
+    end = sign_extend(end);
+    addr_end = pml4_end(addr);
 
-    for (int i = PML4_INDEX(base); i <= PML4_INDEX(end); ++i) {
+    while (addr < end) {
+        int i = PML4_INDEX(addr);
         struct page_table *pdpt;
         physaddr_t *entry = &pml4->entries[i];
+
+//        cprintf("\n%p %p pml4_walk_range\n", addr, addr_end);
 
         if (walker->get_pml4e) {
             ret = walker->get_pml4e(entry, addr, addr_end, walker);
@@ -238,8 +253,10 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
                 return ret;
         }
 
-        addr = addr_end + 1;
-        addr_end = MIN(end, pml4_end(addr));
+        if (addr_end == KERNEL_LIM)
+            break;
+        addr = sign_extend(addr_end + 1);
+        addr_end = pml4_end(addr);
     }
 
 	return 0;

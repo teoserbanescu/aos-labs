@@ -36,7 +36,9 @@ int pml4_setup(struct boot_info *boot_info)
 	 * stack. The kernel stack grows down from virtual address KSTACK_TOP.
 	 * Map 'bootstack' to [KSTACK_TOP - KSTACK_SIZE, KSTACK_TOP).
 	 */
-    boot_map_region(kernel_pml4, (void *)(KSTACK_TOP-KSTACK_SIZE), KSTACK_SIZE, (physaddr_t)bootstack , PAGE_PRESENT);
+    boot_map_region(kernel_pml4, (void *)(KSTACK_TOP-KSTACK_SIZE), KSTACK_SIZE, (physaddr_t)bootstack , PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+
+    cprintf("\n pages \n");
 
 	/* Map in the pages from the buddy allocator as RW-. */
     boot_map_region(kernel_pml4, page2kva(pages), npages * PAGE_SIZE,  page2pa(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
