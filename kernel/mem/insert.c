@@ -21,6 +21,7 @@ static int insert_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page;
 
 	/* LAB 2: your code here. */
+//	tlb_invalidate(info->pml4, )
 
 	return 0;
 }
@@ -76,10 +77,24 @@ int page_insert(struct page_table *pml4, struct page_info *page, void *va,
 	struct page_walker walker = {
 		.get_pte = insert_pte,
 		.get_pde = insert_pde,
+		.get_pdpte = ptbl_alloc,
+		.get_pml4e = ptbl_alloc,
 		.udata = &info,
 	};
 
-	return walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE),
-		&walker);
+//    info.flags = flags | PAGE_PRESENT;
+//    page_decref(page2pa(page))
+//    tlb_invalidate(va)
+
+    if (walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE),
+		&walker) < 0) {
+        return -1;
+    }
+
+    //
+    // tlb_invalidate(pml4, va);
+
+    page->pp_ref++;
+    return 0;
 }
 
