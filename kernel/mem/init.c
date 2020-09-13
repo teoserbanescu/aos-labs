@@ -30,7 +30,7 @@ int pml4_setup(struct boot_info *boot_info)
 	/* Map in the regions used by the kernel from the ELF header passed to
 	 * us through the boot info struct.
 	 */
-	boot_map_kernel(kernel_pml4, boot_info->elf_hdr);
+	boot_map_kernel(kernel_pml4, KADDR((uintptr_t)boot_info->elf_hdr));
 
 	/* Use the physical memory that 'bootstack' refers to as the kernel
 	 * stack. The kernel stack grows down from virtual address KSTACK_TOP.
@@ -41,7 +41,7 @@ int pml4_setup(struct boot_info *boot_info)
     cprintf("\n pages \n");
 
 	/* Map in the pages from the buddy allocator as RW-. */
-    boot_map_region(kernel_pml4, page2kva(pages), npages * PAGE_SIZE,  page2pa(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+    boot_map_region(kernel_pml4, page2kva(pages), npages * (sizeof *pages),  page2pa(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 
     /* Migrate the struct page_info structs to the newly mapped area using
      * buddy_migrate().
@@ -123,7 +123,7 @@ void mem_init(struct boot_info *boot_info)
 	lab2_check_pml4();
 
 //#ifdef DEBUG
-    dump_page_tables(kernel_pml4, 0);
+    dump_page_tables(kernel_pml4, PAGE_PRESENT);
 //#endif
 
 	/* Load the kernel PML4. */
