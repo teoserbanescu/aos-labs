@@ -227,6 +227,26 @@ void page_init_ext(struct boot_info *boot_info)
 	 */
 	for (i = 0; i < boot_info->mmap_len; ++i, ++entry) {
 		/* LAB 2: your code here. */
+		if (entry->type != MMAP_FREE) {
+		    continue;
+		}
+        for (pa = entry->addr; pa < entry->addr + entry->len; pa += PAGE_SIZE) {
+
+            if (pa < BOOT_MAP_LIM)
+                continue;
+
+            page = pa2page(pa);
+
+//            if ((pa == 0 ||
+//                 pa == PAGE_ADDR(PADDR(boot_info)) ||
+//                 pa == (uintptr_t)boot_info->elf_hdr ||
+//                 (KERNEL_LMA <= pa && pa < end) ||
+//                 entry->type != MMAP_FREE)) {
+//                continue;
+//            }
+
+            page_free(page);
+        }
 	}
 }
 
