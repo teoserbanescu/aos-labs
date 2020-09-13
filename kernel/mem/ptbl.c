@@ -92,5 +92,16 @@ int ptbl_free(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	/* LAB 2: your code here. */
+    struct page_info *page;
+
+    if (!(*entry & PAGE_PRESENT))
+        return 0;
+
+    // FIXME check every entry in the page table?
+//    page = pa2page(PAGE_ADDR(*entry));
+//    page_free(page);
+    // FIXME page2kva??
+    *entry = 0;
+
 	return 0;
 }
