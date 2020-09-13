@@ -227,7 +227,7 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
 static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
-    cprintf("base %p end %p pml4_walk_range\n", base, end);
+//    cprintf("base %p end %p pml4_walk_range\n", base, end);
 
 	/* LAB 2: your code here. */
 	int ret;
