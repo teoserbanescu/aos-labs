@@ -16,7 +16,7 @@ int ptbl_alloc(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	/* LAB 2: your code here. */
     struct page_info *page;
 
-	if (*entry) {
+	if (*entry & PAGE_PRESENT) {
 	    return 0;
 	}
 	else {
@@ -24,7 +24,7 @@ int ptbl_alloc(physaddr_t *entry, uintptr_t base, uintptr_t end,
         if (!page)
             panic("ptbl_alloc page alloc no mem\n");
         page->pp_ref++;
-        *entry = page2pa(page) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
+        *entry = PAGE_ADDR(page2pa(page)) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
 	}
 	return 0;
 }
@@ -50,7 +50,7 @@ int ptbl_split(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	/* LAB 2: your code here. */
-    if (*entry & (PAGE_HUGE | PAGE_PRESENT)) {
+    if ((*entry & PAGE_HUGE) && (*entry & PAGE_PRESENT)) {
 
     }
     else {
