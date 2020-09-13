@@ -93,15 +93,23 @@ int ptbl_free(physaddr_t *entry, uintptr_t base, uintptr_t end,
 {
 	/* LAB 2: your code here. */
     struct page_info *page;
+    struct page_table* pte;
+    uintptr_t addr;
+    uint64_t i;
 
-    if (!(*entry & PAGE_PRESENT))
-        return 0;
+    if (!(*entry & PAGE_PRESENT)) {
+        return -1;
+    }
 
-    // FIXME check every entry in the page table?
-//    page = pa2page(PAGE_ADDR(*entry));
-//    page_free(page);
-    // FIXME page2kva??
-    *entry = 0;
-
+    page = pa2page(PAGE_ADDR(*entry));
+    pte = page2kva(page);
+    for(i = 0, addr = 0; addr < PAGE_SIZE; addr += sizeof(physaddr_t), i++) {
+        if (pte->entries[i] & PAGE_PRESENT) {
+            return 0;
+        }
+    }
+    // FIXME use page_decref?
+    page_free(page);
+//    *entry = 0;
 	return 0;
 }
