@@ -93,17 +93,17 @@ struct page_info *buddy_split(struct page_info *lhs, size_t req_order)
 	/* LAB 1: your code here. */
 	struct page_info *buddy;
 
-	if (lhs->pp_order == req_order)
-		return lhs;
+	while (lhs->pp_order > req_order) {
+        lhs->pp_order -= 1;
+        lhs->pp_free = 1;
 
-	lhs->pp_order -= 1;
-	buddy = get_buddy(lhs);
-	buddy->pp_order = lhs->pp_order;
-	buddy->pp_free = 1;
+        buddy = get_buddy(lhs);
+        buddy->pp_order = lhs->pp_order;
+        buddy->pp_free = 1;
 
-	list_push(page_free_list + buddy->pp_order, &buddy->pp_node);
-
-	return buddy_split(lhs, req_order);
+        list_push(page_free_list + buddy->pp_order, &buddy->pp_node);
+    }
+    return lhs;
 }
 
 /* Merges the buddy of the page with the page if the buddy is free to form
@@ -152,6 +152,7 @@ struct page_info *buddy_merge(struct page_info *page)
         page->pp_order++;
         page->pp_free = 1;
         buddy->pp_free = 0;
+        buddy->pp_order = 0;
     }
 
 	return page;
@@ -170,7 +171,11 @@ struct page_info *buddy_find(size_t req_order)
 
 	struct list *node;
 	struct page_info *page, *big_page;
-
+#ifdef DEBUG
+	static int x = 0;
+	cprintf("%d\n", x++);
+	show_buddy_info();
+#endif
 	page = NULL;
 	big_page = NULL;
 
@@ -178,7 +183,7 @@ struct page_info *buddy_find(size_t req_order)
 		return NULL;
 
 //	if find exact order return it
-    node = list_pop(page_free_list + req_order);
+    node = list_head(page_free_list + req_order);
     if (node) {
 		page = container_of(node, struct page_info, pp_node);
 		return page;
@@ -189,7 +194,6 @@ struct page_info *buddy_find(size_t req_order)
 		if (node) {
 			big_page = container_of(node, struct page_info, pp_node);
 			page = buddy_split(big_page, req_order);
-			list_remove(&big_page->pp_node);
 			return page;
 		}
 	}
@@ -218,8 +222,10 @@ struct page_info *page_alloc(int alloc_flags)
 	struct page_info *page;
 	size_t req_order;
 
-	req_order = ((unsigned int)alloc_flags & (unsigned int)ALLOC_HUGE) ? BUDDY_2M_PAGE : 0;
+	req_order = ((unsigned int)alloc_flags & (unsigned int)ALLOC_HUGE) ? BUDDY_2M_PAGE : BUDDY_4K_PAGE;
 	page = buddy_find(req_order);
+    list_remove(&page->pp_node);
+    page->pp_free = 0;
 
 	if (!page)
 		panic("out of free memory");
