@@ -18,17 +18,18 @@ static int insert_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	struct insert_info *info = walker->udata;
-	struct page_info *page;
+	struct page_info *page = info->page;
 
 	/* LAB 2: your code here. */
-	if (!(*entry & PAGE_PRESENT)) {
-	    // Page is not already present, insert
-
-	} else {
-	    // PTE already points to a present page
+	if (*entry & PAGE_PRESENT) {
+        // PTE already points to a present page
 	    page_decref(pa2page(PAGE_ADDR(*entry)));
         tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
 	}
+
+    // Page is not present, insert it.
+	page->pp_ref++;
+	*entry = PAGE_ADDR(page2pa(page)) | info->flags;
 
 	return 0;
 }
@@ -44,16 +45,23 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	struct insert_info *info = walker->udata;
-	struct page_info *page;
+	struct page_info *page = info->page;
 
 	/* LAB 2: your code here. */
-    if (!(*entry & PAGE_PRESENT & PAGE_HUGE)) {
-        // Page is not already present, insert
-
-    } else {
+    if (*entry & PAGE_PRESENT & PAGE_HUGE) {
         // PTE already points to a present page
         page_decref(pa2page(PAGE_ADDR(*entry)));
         tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
+    }
+
+    // Page is not present, insert it.
+    if (page->pp_order == 0) {
+        // The new page is a 4K page, alloc a new page table.
+        ptbl_alloc(entry, base, end, walker);
+    } else {
+        // The new page is a 2M page.
+        page->pp_ref++;
+        *entry = PAGE_ADDR(page2pa(page)) | info->flags;
     }
 
 	return 0;
@@ -107,6 +115,8 @@ int page_insert(struct page_table *pml4, struct page_info *page, void *va,
         return -1;
     }
 
+    // FIXME huge page
+    // FIXME this is done in get_pte, get_pde
     // tlb_invalidate(pml4, va);
     // page->pp_ref++;
     return 0;
