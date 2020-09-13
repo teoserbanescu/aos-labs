@@ -51,7 +51,7 @@ int ptbl_split(physaddr_t *entry, uintptr_t base, uintptr_t end,
 {
 	/* LAB 2: your code here. */
     if ((*entry & PAGE_HUGE) && (*entry & PAGE_PRESENT)) {
-
+        panic("why");
     }
     else {
         ptbl_alloc(entry, base, end, walker);
