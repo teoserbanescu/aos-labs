@@ -75,6 +75,6 @@ struct page_info *page_lookup(struct page_table *pml4, void *va,
         *entry_store = info.entry;
 	}
 
-	return pa2page(PADDR(entry_store));
+    return pa2page(PAGE_ADDR(*info.entry));
 }
 
