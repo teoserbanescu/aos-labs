@@ -101,6 +101,7 @@ void mem_init(struct boot_info *boot_info)
 	 * 'npages' is the number of physical pages in memory.  Your code goes here.
 	 */
 	pages = boot_alloc(npages * sizeof *pages);
+#define DEBUG
 #ifdef DEBUG
     cprintf("pages %p\n", pages);
     cprintf("pages %p\n", boot_alloc(0));
@@ -129,7 +130,7 @@ void mem_init(struct boot_info *boot_info)
 //#endif
 
 	/* Load the kernel PML4. */
-    load_pml4((struct page_table *)PADDR(kernel_pml4));
+//    load_pml4((struct page_table *)PADDR(kernel_pml4));
 
 	/* Check the paging functions. */
 	lab2_check_paging();
@@ -230,9 +231,6 @@ void page_init_ext(struct boot_info *boot_info)
 	 */
 	for (i = 0; i < boot_info->mmap_len; ++i, ++entry) {
 		/* LAB 2: your code here. */
-		if (entry->type != MMAP_FREE) {
-		    continue;
-		}
         for (pa = entry->addr; pa < entry->addr + entry->len; pa += PAGE_SIZE) {
 
             if (pa < BOOT_MAP_LIM)
@@ -240,13 +238,13 @@ void page_init_ext(struct boot_info *boot_info)
 
             page = pa2page(pa);
 
-//            if ((pa == 0 ||
-//                 pa == PAGE_ADDR(PADDR(boot_info)) ||
-//                 pa == (uintptr_t)boot_info->elf_hdr ||
-//                 (KERNEL_LMA <= pa && pa < end) ||
-//                 entry->type != MMAP_FREE)) {
-//                continue;
-//            }
+            if ((pa == 0 ||
+                 pa == PAGE_ADDR(PADDR(boot_info)) ||
+                 pa == (uintptr_t)boot_info->elf_hdr ||
+                 (KERNEL_LMA <= pa && pa < end) ||
+                 entry->type != MMAP_FREE)) {
+                continue;
+            }
 
             page_free(page);
         }
