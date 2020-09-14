@@ -48,7 +48,7 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page = info->page;
 
 	/* LAB 2: your code here. */
-    if (*entry & PAGE_PRESENT & PAGE_HUGE) {
+    if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE)) {
         // PTE already points to a present page
         page_decref(pa2page(PAGE_ADDR(*entry)));
         tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
@@ -98,17 +98,14 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 int page_insert(struct page_table *pml4, struct page_info *page, void *va,
     uint64_t flags)
 {
-    /* LAB 2: your code here. */
+    /* LAB 2: your c/ode here. */
     struct insert_info info = {
             .page = page,
             .pml4 = pml4,
-            // PAGE_PRESENT should always be set
-            .flags = flags | PAGE_PRESENT,
+            .flags = flags | PAGE_PRESENT,   /* PAGE_PRESENT should always be set */
     };
     struct page_walker walker = {
 		.get_pte = insert_pte,
-		// FIXME support huge pages
-//		.get_pde = ptbl_alloc,
 		.get_pde = insert_pde,
 		.get_pdpte = ptbl_alloc,
 		.get_pml4e = ptbl_alloc,
@@ -117,13 +114,8 @@ int page_insert(struct page_table *pml4, struct page_info *page, void *va,
 
     if (page->pp_order == BUDDY_2M_PAGE && !hpage_aligned((uintptr_t)va))
         return -1;
+    // FIXME huge page support: add to flags
 
     return walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE), &walker) < 0;
-
-    // FIXME huge page
-    // FIXME this is done in get_pte, get_pde
-    // tlb_invalidate(pml4, va);
-    // page->pp_ref++;
-    return 0;
 }
 

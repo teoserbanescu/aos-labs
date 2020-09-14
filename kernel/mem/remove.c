@@ -39,11 +39,13 @@ static int remove_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page;
 
 	/* LAB 2: your code here. */
-    if (!(*entry & PAGE_PRESENT & PAGE_HUGE)) {
-        return 0;
+    if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE)) {
+        page = pa2page(PAGE_ADDR(*entry));
+        page_decref(page);
+        tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
+        *entry = 0;
     }
 
-    // FIXME implement remove huge page
 	return 0;
 }
 
@@ -54,11 +56,11 @@ void unmap_page_range(struct page_table *pml4, void *va, size_t size)
 	struct remove_info info = {
 		.pml4 = pml4,
 	};
-	// FIXME is this walker good?
+
 	struct page_walker walker = {
 		.get_pte = remove_pte,
 		.get_pde = remove_pde,
-		.unmap_pte = remove_pte,
+		.unmap_pte = ptbl_free,
 		.unmap_pde = ptbl_free,
 		.unmap_pdpte = ptbl_free,
 		.unmap_pml4e = ptbl_free,
@@ -77,6 +79,13 @@ void unmap_user_pages(struct page_table *pml4)
 /* Unmaps the physical page at the virtual address va. */
 void page_remove(struct page_table *pml4, void *va)
 {
-	unmap_page_range(pml4, va, PAGE_SIZE);
+    struct page_info *page;
+    page = page_lookup(pml4, va, NULL);
+    if (page->pp_order == BUDDY_4K_PAGE)
+    	unmap_page_range(pml4, va, PAGE_SIZE);
+    else if (page->pp_order == BUDDY_2M_PAGE)
+        unmap_page_range(pml4, va, HPAGE_SIZE);
+    else
+        panic("BUG pages wrong\n");
 }
 
