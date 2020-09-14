@@ -55,16 +55,19 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
     }
 
     // Page is not present, insert it.
-    if (page->pp_order == 0) {
+    if (page->pp_order == BUDDY_4K_PAGE) {
         // The new page is a 4K page, alloc a new page table.
         ptbl_alloc(entry, base, end, walker);
-    } else {
+        return 0;
+    }
+    else {
         // The new page is a 2M page.
         page->pp_ref++;
-        *entry = PAGE_ADDR(page2pa(page)) | info->flags;
+        *entry = PAGE_ADDR(page2pa(page)) | info->flags | PAGE_HUGE;
+        return 0;
     }
 
-	return 0;
+	return -1;
 }
 
 
@@ -105,17 +108,17 @@ int page_insert(struct page_table *pml4, struct page_info *page, void *va,
     struct page_walker walker = {
 		.get_pte = insert_pte,
 		// FIXME support huge pages
-		.get_pde = ptbl_alloc,
-//		.get_pde = insert_pde,
+//		.get_pde = ptbl_alloc,
+		.get_pde = insert_pde,
 		.get_pdpte = ptbl_alloc,
 		.get_pml4e = ptbl_alloc,
 		.udata = &info,
 	};
 
-    if (walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE),
-		&walker) < 0) {
+    if (page->pp_order == BUDDY_2M_PAGE && !hpage_aligned((uintptr_t)va))
         return -1;
-    }
+
+    return walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE), &walker) < 0;
 
     // FIXME huge page
     // FIXME this is done in get_pte, get_pde

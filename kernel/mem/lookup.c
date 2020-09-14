@@ -36,10 +36,9 @@ static int lookup_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct lookup_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
-    if (!(*entry & PAGE_PRESENT & PAGE_HUGE))
-        return 0;
-
+    if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE))
     info->entry = entry;
+
 	return 0;
 }
 
