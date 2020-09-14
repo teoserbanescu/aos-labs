@@ -39,6 +39,12 @@ static int remove_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct page_info *page;
 
 	/* LAB 2: your code here. */
+//	if (end - base < HPAGE_SIZE) {
+//  TODO
+//	    if (*entry & PAGE_HUGE)
+//            *entry -= PAGE_HUGE;
+//	}
+//	else
     if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE)) {
         page = pa2page(PAGE_ADDR(*entry));
         page_decref(page);
