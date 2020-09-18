@@ -52,8 +52,7 @@ static int ptbl_walk_range(struct page_table *ptbl, uintptr_t base,
 	/* LAB 2: your code here. */
     int ret;
     uintptr_t addr, addr_end;
-    addr = sign_extend(base);
-    end = sign_extend(end);
+    addr = base;
     addr_end = MIN(end, ptbl_end(addr));
 
     while (addr < end) {
@@ -76,11 +75,11 @@ static int ptbl_walk_range(struct page_table *ptbl, uintptr_t base,
                 return ret;
         }
 
-        if (sign_extend(ptbl_end(addr)) == KERNEL_LIM)
+        if (ptbl_end(addr) == KERNEL_LIM)
             break;
 
-        addr = sign_extend(ptbl_end(addr) + 1);
-        addr_end = sign_extend(MIN(end, ptbl_end(addr)));
+        addr = ptbl_end(addr) + 1;
+        addr_end = MIN(end, ptbl_end(addr));
     }
 	return 0;
 }
@@ -102,8 +101,7 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
 	/* LAB 2: your code here. */
     int ret;
     uintptr_t addr, addr_end;
-    addr = sign_extend(base);
-    end = sign_extend(end);
+    addr = base;
     addr_end = MIN(end, pdir_end(addr));
 
     while (addr < end) {
@@ -140,11 +138,11 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
             if (ret < 0)
                 return ret;
         }
-        if (sign_extend(pdir_end(addr)) == KERNEL_LIM)
+        if (pdir_end(addr) == KERNEL_LIM)
             break;
 
-        addr = sign_extend(pdir_end(addr) + 1);
-        addr_end = sign_extend(MIN(end, pdir_end(addr)));
+        addr = pdir_end(addr) + 1;
+        addr_end = MIN(end, pdir_end(addr));
     }
 
 	return 0;
@@ -167,8 +165,7 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
 	/* LAB 2: your code here. */
     int ret;
     uintptr_t addr, addr_end;
-    addr = sign_extend(base);
-    end = sign_extend(end);
+    addr = base;
     addr_end = MIN(end, pdpt_end(addr));
 
     while (addr < end) {
@@ -206,10 +203,10 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
                 return ret;
         }
 
-        if (sign_extend(pdpt_end(addr)) == KERNEL_LIM)
+        if (pdpt_end(addr) == KERNEL_LIM)
                 break;
-        addr = sign_extend(pdpt_end(addr) + 1);
-        addr_end = sign_extend(MIN(end, pdpt_end(addr)));
+        addr = pdpt_end(addr) + 1;
+        addr_end = MIN(end, pdpt_end(addr));
     }
 	return 0;
 }

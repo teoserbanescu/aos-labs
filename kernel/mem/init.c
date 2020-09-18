@@ -245,11 +245,8 @@ void page_init_ext(struct boot_info *boot_info)
 
             page = pa2page(pa);
 
-            if ((pa == 0 ||
-                 pa == PAGE_ADDR(PADDR(boot_info)) ||
-                 pa == (uintptr_t)boot_info->elf_hdr ||
-                 (KERNEL_LMA <= pa && pa < end) ||
-                 entry->type != MMAP_FREE)) {
+            if ((KERNEL_LMA <= pa && pa < end) ||
+                    (entry->type != MMAP_FREE)) {
                 continue;
             }
 
