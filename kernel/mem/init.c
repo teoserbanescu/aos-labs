@@ -91,7 +91,6 @@ void mem_init(struct boot_info *boot_info)
 	npages = MIN(BOOT_MAP_LIM, highest_addr) / PAGE_SIZE;
 
 	/* Remove this line when you're ready to test this function. */
-//	panic("mem_init: This function is not finished\n");
 
 	/*
 	 * Allocate an array of npages 'struct page_info's and store it in 'pages'.
@@ -100,12 +99,7 @@ void mem_init(struct boot_info *boot_info)
 	 * 'npages' is the number of physical pages in memory.  Your code goes here.
 	 */
 	pages = boot_alloc(npages * sizeof *pages);
-#define DEBUG
-#ifdef DEBUG
-    cprintf("pages %p\n", pages);
-    cprintf("pages %p\n", boot_alloc(0));
-    cprintf("pages %p\n", boot_alloc(0));
-#endif
+
 	/*
 	 * Now that we've allocated the initial kernel data structures, we set
 	 * up the list of free physical pages. Once we've done so, all further
@@ -124,10 +118,6 @@ void mem_init(struct boot_info *boot_info)
 
 	/* Check the kernel PML4. */
 	lab2_check_pml4();
-
-//#ifdef DEBUG
-    dump_page_tables(kernel_pml4, PAGE_PRESENT);
-//#endif
 
 	/* Load the kernel PML4. */
     load_pml4((struct page_table *)PADDR(kernel_pml4));

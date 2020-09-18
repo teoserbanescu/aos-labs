@@ -150,7 +150,6 @@ struct page_info *buddy_merge(struct page_info *page)
             page = aux;
         }
 
-
         page->pp_order++;
         page->pp_free = 1;
         buddy->pp_free = 0;
@@ -172,11 +171,7 @@ struct page_info *buddy_find(size_t req_order)
 
 	struct list *node;
 	struct page_info *page, *big_page;
-#ifdef DEBUG
-	static int x = 0;
-	cprintf("%d\n", x++);
-	show_buddy_info();
-#endif
+
 	page = NULL;
 	big_page = NULL;
 

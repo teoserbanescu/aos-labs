@@ -114,7 +114,6 @@ int page_insert(struct page_table *pml4, struct page_info *page, void *va,
 
     if (page->pp_order == BUDDY_2M_PAGE && !hpage_aligned((uintptr_t)va))
         return -1;
-    // FIXME huge page support: add to flags
 
     return walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE), &walker) < 0;
 }
