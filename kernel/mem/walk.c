@@ -239,9 +239,6 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
         struct page_table *pdpt;
         physaddr_t *entry = &pml4->entries[i];
 
-#ifdef DEBUG
-        cprintf("\naddr %p addr_end %p base %p end %p pml4_walk_range\n", addr, addr_end, base, end);
-#endif
         if (walker->get_pml4e) {
             ret = walker->get_pml4e(entry, addr, addr_end, walker);
             if (ret < 0)
