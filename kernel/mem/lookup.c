@@ -64,11 +64,10 @@ struct page_info *page_lookup(struct page_table *pml4, void *va,
 		return NULL;
 
 	if (entry_store) {
-            // store the address of the PTE for this page into entry_store
-            *entry_store = info.entry;
-
-        return pa2page(PAGE_ADDR(*info.entry));
+        // store the address of the PTE for this page into entry_store
+        *entry_store = info.entry;
     }
-	return NULL;
+
+    return pa2page(PAGE_ADDR(*info.entry));
 }
 

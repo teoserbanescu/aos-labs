@@ -122,8 +122,6 @@ void mem_init(struct boot_info *boot_info)
 	/* Load the kernel PML4. */
     load_pml4((struct page_table *)PADDR(kernel_pml4));
 
-    cprintf("PASSED cr3\n");
-
 	/* Check the paging functions. */
 //	lab2_check_paging();
 

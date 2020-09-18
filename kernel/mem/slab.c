@@ -38,6 +38,27 @@ int slab_alloc_chunk(struct slab *slab)
 	size_t i;
 
 	/* LAB 3: your code here. */
+	page = page2kva(page_alloc(ALLOC_ZERO));
+	if (!page) {
+	    return -1;
+	}
+
+	page->pp_ref++;
+
+	info = (struct slab_info *) (page + PAGE_SIZE - sizeof (struct slab_info));
+    info->slab = slab;
+    info->free_count = slab->count;
+
+    list_init(&info->free_list);
+
+    for (i = 0; i < slab->count; ++i) {
+        obj = (struct slab_obj *) (char *) page + i * (sizeof(struct slab_obj) + sizeof(struct slab_info));
+        obj->info = info;
+        list_push(&info->free_list, &obj->node);
+    }
+
+    list_push(&slab->partial, &info->node);
+
 	return 0;
 }
 
@@ -47,6 +68,8 @@ int slab_alloc_chunk(struct slab *slab)
 void slab_free_chunk(struct slab *slab, struct slab_info *info)
 {
 	/* LAB 3: your code here. */
+	list_remove(&info->node);
+	page_decref(page_lookup(kernel_pml4, info, NULL));
 }
 
 /* Initializes a slab allocator for the given object size as follows:
