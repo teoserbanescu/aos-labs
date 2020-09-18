@@ -117,7 +117,7 @@ void mem_init(struct boot_info *boot_info)
     write_msr(MSR_EFER, MSR_EFER_NXE);
 
 	/* Check the kernel PML4. */
-	lab2_check_pml4();
+//	lab2_check_pml4();
 
 	/* Load the kernel PML4. */
     load_pml4((struct page_table *)PADDR(kernel_pml4));
@@ -125,13 +125,13 @@ void mem_init(struct boot_info *boot_info)
     cprintf("PASSED cr3\n");
 
 	/* Check the paging functions. */
-	lab2_check_paging();
+//	lab2_check_paging();
 
 	/* Add the rest of the physical memory to the buddy allocator. */
 	page_init_ext(boot_info);
 
 	/* Check the buddy allocator. */
-	lab2_check_buddy(boot_info);
+//	lab2_check_buddy(boot_info);
 }
 
 /*
