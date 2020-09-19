@@ -211,16 +211,23 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 		if (ph->p_type != ELF_PROG_LOAD) {
 			continue;
 		}
-		flags = 0;
-		populate_region(task->task_pml4, ph->p_va, ph->p_memsz, flags);
+		flags = PAGE_USER;
+		flags |= (ph->p_flags & ELF_PROG_FLAG_WRITE) ? PAGE_WRITE : 0;
+		flags |= (ph->p_flags & ELF_PROG_FLAG_READ) ? PAGE_PRESENT : 0;
+		flags |= !(ph->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
+		populate_region(task->task_pml4, (void *)ph->p_va, ph->p_memsz, flags);
+		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+//		FIXME protect_region()
 	}
+
 	/* Now map one page for the program's initial stack at virtual address
 	 * USTACK_TOP - PAGE_SIZE.
 	 */
 
 	/* LAB 3: your code here. */
-
-
+	populate_region(task->task_pml4, (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC | PAGE_USER);
+	task->task_frame.rsp = USTACK_TOP;
+	task->task_frame.rip = elf_hdr->e_entry;
 }
 
 /* Allocates a new task with task_alloc(), loads the named ELF binary using
@@ -240,7 +247,6 @@ void task_create(uint8_t *binary, enum task_type type)
 	if (task->task_type == TASK_TYPE_USER) {
 		nuser_tasks++;
 	}
-
 }
 
 /* Free the task and all of the memory that is used by it.
