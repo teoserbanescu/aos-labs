@@ -207,21 +207,23 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 	elf_hdr = (struct elf *)binary;
 	ph = (struct elf_proghdr *)((uint8_t *)elf_hdr + elf_hdr->e_phoff);
 
-//	load_pml4((void *)PADDR(task->task_pml4));
 
 	for (i = 0; i < elf_hdr->e_phnum; ++i, ++ph) {
-		if (ph->p_type != ELF_PROG_LOAD) {
+		if (ph->p_type != ELF_PROG_LOAD || ph->p_va == 0) {
 			continue;
 		}
-
+		dump_page_tables(task->task_pml4, PAGE_WRITE);
+		cprintf("\n");
 		flags = PAGE_USER | PAGE_PRESENT;
 		flags |= (ph->p_flags & ELF_PROG_FLAG_WRITE) ? PAGE_WRITE : 0;
 		flags |= !(ph->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
 		populate_region(task->task_pml4, (void *)ph->p_va, ph->p_memsz, flags);
-//		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
-//		load_pml4((void *)PADDR(kernel_pml4));
-//		protect_region(task->task_pml4, (void*)ph->p_va, ph->p_memsz, flags);
+		load_pml4((void *)PADDR(task->task_pml4));
+		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+		load_pml4((void *)PADDR(kernel_pml4));
+		protect_region(task->task_pml4, (void*)ph->p_va, ph->p_memsz, flags);
 	}
+	dump_page_tables(task->task_pml4, PAGE_WRITE);
 
 	/* Now map one page for the program's initial stack at virtual address
 	 * USTACK_TOP - PAGE_SIZE.
