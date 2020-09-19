@@ -225,7 +225,8 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 	 */
 
 	/* LAB 3: your code here. */
-	populate_region(task->task_pml4, (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC | PAGE_USER);
+	flags = PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC | PAGE_USER;
+	populate_region(task->task_pml4, (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, flags);
 	task->task_frame.rsp = USTACK_TOP;
 	task->task_frame.rip = elf_hdr->e_entry;
 }
