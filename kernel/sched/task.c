@@ -62,6 +62,10 @@ void task_init(void)
 	 * to tasks.
 	 */
 	/* LAB 3: your code here. */
+    for (int i = 0; i < sizeof(uintptr_t) * pid_max; i += PAGE_SIZE) {
+        struct page_info *page = page_alloc(ALLOC_ZERO);
+        page_insert(kernel_pml4, page,  (void *) PIDMAP_BASE + i, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+    }
 }
 
 /* Sets up the virtual address space for the task. */
@@ -83,6 +87,11 @@ static int task_setup_vas(struct task *task)
 	 */
 
 	/* LAB 3: your code here. */
+    task->task_pml4 = page2kva(page);
+/* FIXME What does this mean
+ * Can you use kernel_pml4 as a template?
+ * */
+
 	return 0;
 }
 
@@ -193,6 +202,8 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 	 */
 
 	/* LAB 3: your code here. */
+
+
 }
 
 /* Allocates a new task with task_alloc(), loads the named ELF binary using
@@ -205,6 +216,14 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 void task_create(uint8_t *binary, enum task_type type)
 {
 	/* LAB 3: your code here. */
+	struct task *task;
+
+	task = task_alloc(0);
+	task_load_elf(task, binary);
+	if (task->task_type == TASK_TYPE_USER) {
+		nuser_tasks++;
+	}
+
 }
 
 /* Free the task and all of the memory that is used by it.
