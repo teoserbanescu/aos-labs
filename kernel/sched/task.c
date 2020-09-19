@@ -63,7 +63,7 @@ void task_init(void)
 	 */
 	/* LAB 3: your code here. */
     for (int i = 0; i < sizeof(uintptr_t) * pid_max; i += PAGE_SIZE) {
-        struct page_info *page = page_alloc(ALLOC_ZERO);
+        struct page_info *page = page_alloc(ALLOC_ZERO);	/*pointers are NULL because of ALLOC_ZERO*/
         page_insert(kernel_pml4, page,  (void *) PIDMAP_BASE + i, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
     }
 }
@@ -88,9 +88,12 @@ static int task_setup_vas(struct task *task)
 
 	/* LAB 3: your code here. */
     task->task_pml4 = page2kva(page);
-/* FIXME What does this mean
- * Can you use kernel_pml4 as a template?
- * */
+/* https://canvas.vu.nl/courses/49330/discussion_topics/288564
+ * just copying the pml4 entries (pointing to the same page tables as the kernel_pml4) should be enough.
+ */
+	for (int i = 0; i < PAGE_TABLE_ENTRIES; ++i) {
+		task->task_pml4[i] = kernel_pml4[i];
+	}
 
 	return 0;
 }
@@ -196,7 +199,21 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 	 */
 
 	/* LAB 3: your code here. */
+	struct elf *elf_hdr;
+	struct elf_proghdr *ph;
+	size_t i;
+	uint64_t flags;
 
+	elf_hdr = (struct elf *)binary;
+	ph = (struct elf_proghdr *)((uint8_t *)elf_hdr + elf_hdr->e_phoff);
+
+	for (i = 0; i < elf_hdr->e_phnum; ++i, ++ph) {
+		if (ph->p_type != ELF_PROG_LOAD) {
+			continue;
+		}
+		flags = 0;
+		populate_region(task->task_pml4, ph->p_va, ph->p_memsz, flags);
+	}
 	/* Now map one page for the program's initial stack at virtual address
 	 * USTACK_TOP - PAGE_SIZE.
 	 */
