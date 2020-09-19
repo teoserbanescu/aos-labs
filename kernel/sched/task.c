@@ -355,7 +355,7 @@ void task_run(struct task *task)
 	cur_task = task;
 	task->task_status = TASK_RUNNING;
 	task->task_runs++;
-	load_pml4(task->task_pml4);
+	load_pml4((void *)PADDR(task->task_pml4));
 
 	task_pop_frame(&task->task_frame);
 }
