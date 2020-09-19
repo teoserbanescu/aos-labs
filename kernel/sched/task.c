@@ -92,7 +92,7 @@ static int task_setup_vas(struct task *task)
  * just copying the pml4 entries (pointing to the same page tables as the kernel_pml4) should be enough.
  */
 	for (int i = 0; i < PAGE_TABLE_ENTRIES; ++i) {
-		task->task_pml4[i] = kernel_pml4[i];
+		task->task_pml4->entries[i] = kernel_pml4->entries[i];
 	}
 
 	return 0;
@@ -207,17 +207,20 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 	elf_hdr = (struct elf *)binary;
 	ph = (struct elf_proghdr *)((uint8_t *)elf_hdr + elf_hdr->e_phoff);
 
+//	load_pml4((void *)PADDR(task->task_pml4));
+
 	for (i = 0; i < elf_hdr->e_phnum; ++i, ++ph) {
 		if (ph->p_type != ELF_PROG_LOAD) {
 			continue;
 		}
-		flags = PAGE_USER;
+
+		flags = PAGE_USER | PAGE_PRESENT;
 		flags |= (ph->p_flags & ELF_PROG_FLAG_WRITE) ? PAGE_WRITE : 0;
-		flags |= (ph->p_flags & ELF_PROG_FLAG_READ) ? PAGE_PRESENT : 0;
 		flags |= !(ph->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
 		populate_region(task->task_pml4, (void *)ph->p_va, ph->p_memsz, flags);
-		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
-//		FIXME protect_region()
+//		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+//		load_pml4((void *)PADDR(kernel_pml4));
+//		protect_region(task->task_pml4, (void*)ph->p_va, ph->p_memsz, flags);
 	}
 
 	/* Now map one page for the program's initial stack at virtual address
@@ -337,6 +340,22 @@ void task_run(struct task *task)
 	 */
 
 	/* LAB 3: Your code here. */
-	panic("task_run() not yet implemented");
+//	panic("task_run() not yet implemented");
+
+	if (!cur_task) {
+		cur_task = task;
+	}
+
+//	should set cur_task, not task
+	if (cur_task->task_status == TASK_RUNNING) {
+		cur_task->task_status = TASK_RUNNABLE;
+	}
+
+	cur_task = task;
+	task->task_status = TASK_RUNNING;
+	task->task_runs++;
+	load_pml4(task->task_pml4);
+
+	task_pop_frame(&task->task_frame);
 }
 

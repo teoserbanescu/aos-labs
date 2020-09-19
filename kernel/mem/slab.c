@@ -38,12 +38,14 @@ int slab_alloc_chunk(struct slab *slab)
 	size_t i;
 
 	/* LAB 3: your code here. */
-	page = page2kva(page_alloc(ALLOC_ZERO));
+	page = page_alloc(ALLOC_ZERO);
+	page->pp_ref++;
+
+	page = page2kva(page);
+
 	if (!page) {
 	    return -1;
 	}
-
-	page->pp_ref++;
 
 	info = (struct slab_info *) (page + PAGE_SIZE - sizeof (struct slab_info));
     info->slab = slab;
@@ -52,8 +54,10 @@ int slab_alloc_chunk(struct slab *slab)
     list_init(&info->free_list);
 
     for (i = 0; i < slab->count; ++i) {
-        obj = (struct slab_obj *) (char *) page + i * (sizeof(struct slab_obj) + sizeof(struct slab_info));
+    	/* slab->obj_size already contains sizeof(struct slab_obj); */
+        obj = (struct slab_obj *) ((char *) page + (i * slab->obj_size));
         obj->info = info;
+        list_init(&obj->node);
         list_push(&info->free_list, &obj->node);
     }
 
