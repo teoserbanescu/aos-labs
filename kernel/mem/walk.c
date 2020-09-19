@@ -265,7 +265,7 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
 
         if (sign_extend(pml4_end(addr)) == KERNEL_LIM)
             break;
-        addr = pml4_end(addr) + 1;
+        addr = sign_extend(pml4_end(addr) + 1);
         addr_end = MIN(end, pml4_end(addr));
     }
 
