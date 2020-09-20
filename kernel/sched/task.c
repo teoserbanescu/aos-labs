@@ -20,7 +20,7 @@ size_t nuser_tasks = 0;
 struct task *pid2task(pid_t pid, int check_perm)
 {
 	struct task *task;
-	
+
 	/* PID 0 is the current task. */
 	if (pid == 0) {
 		return cur_task;
@@ -208,17 +208,18 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 	ph = (struct elf_proghdr *)((uint8_t *)elf_hdr + elf_hdr->e_phoff);
 
 	for (i = 0; i < elf_hdr->e_phnum; ++i, ++ph) {
-		if (ph->p_type != ELF_PROG_LOAD || ph->p_va == 0) {
+		if (ph->p_type != ELF_PROG_LOAD || ph->p_va == 0 || ph->p_memsz == 0) {
 			continue;
 		}
+
 		flags = PAGE_USER | PAGE_PRESENT;
 		flags |= (ph->p_flags & ELF_PROG_FLAG_WRITE) ? PAGE_WRITE : 0;
 		flags |= !(ph->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
 
 		populate_region(task->task_pml4, (void *)ph->p_va, ph->p_memsz, flags);
-		load_pml4((void *)PADDR(task->task_pml4));
+		load_pml4((void *)PADDR(task->task_pml4)); // has to be here to reload address space
+
 		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
-		load_pml4((void *)PADDR(kernel_pml4));
 		protect_region(task->task_pml4, (void*)ph->p_va, ph->p_memsz, flags);
 	}
 
@@ -233,6 +234,7 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 
 	task->task_frame.rsp = USTACK_TOP;
 	task->task_frame.rip = elf_hdr->e_entry;
+	dump_page_tables(task->task_pml4, PAGE_PRESENT);
 }
 
 /* Allocates a new task with task_alloc(), loads the named ELF binary using

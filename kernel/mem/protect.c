@@ -38,9 +38,11 @@ static int protect_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct protect_info *info = walker->udata;
 
 	/* LAB 3: your code here. */
-	if((*entry & PAGE_MASK) != info->flags) {
-		*entry = PAGE_ADDR(*entry) | info->flags;
-		tlb_invalidate(info->pml4, (void*) base);
+	if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE)) {
+		if ((*entry & PAGE_MASK) != info->flags) {
+			*entry = PAGE_ADDR(*entry) | info->flags;
+			tlb_invalidate(info->pml4, (void *) base);
+		}
 	}
 
 	return 0;

@@ -25,7 +25,13 @@ isr_common_stub:
 	/* LAB 3: your code here. */
 	/* Save the register state on the stack. */
 
+// https://canvas.vu.nl/courses/49330/discussion_topics/289392
+
 	/* Recover the segments. */
+	movq $GDT_KDATA, %rax
+    mov %rax, %ds
+    mov %rax, %ss
+    mov %rax, %es
 
 	/* Jump to the generic interrupt handler. */
 	movq %rsp, %rdi
@@ -53,6 +59,14 @@ iret64:
 
 	/* Return from the interrupt. */
 	addq $16, %rsp
+	addq $32, %rsp // FIXME need this?
+
+    pushq IF_SS(%rdi)
+    pushq IF_RSP(%rdi)
+    pushq IF_RFLAGS(%rdi)
+    pushq IF_CS(%rdi)
+    pushq IF_RIP(%rdi)
+
 	iretq
 
 .global sysret64
