@@ -66,10 +66,30 @@ isr_common_stub:
 syscall64:
 	/* LAB 3: your code here. */
 	/* Store the userspace stack pointer in the per-cpu struct. */
+    swapgs
+//    mov %rsp, CPU_TSS_RSP3(%gs)
 
 	/* Load the kernel stack pointer from the per-cpu struct. */
+//    mov CPU_TSS_RSP0(%gs), %rsp
 
 	/* Store the register state into the per-cpu struct. */
+//    movq CPU_TASK(%gs), %rax
+
+    movq %r8,  IF_R8(%rax)
+	movq %r9,  IF_R9(%rax)
+	movq %r10, IF_R10(%rax)
+	movq %r11, IF_R11(%rax)
+	movq %r12, IF_R12(%rax)
+	movq %r13, IF_R13(%rax)
+	movq %r14, IF_R14(%rax)
+    movq %r15, IF_R15(%rax)
+
+	movq %rsi, IF_RSI(%rax)
+	movq %rbp, IF_RBP(%rax)
+	movq %rbx, IF_RBX(%rax)
+	movq %rdx, IF_RDX(%rax)
+	movq %rcx, IF_RCX(%rax)
+	movq %rdi, IF_RDI(%rax)
 
 	/* Jump to the system call handler. */
 	movq %r10, %rcx
