@@ -59,13 +59,36 @@ iret64:
 
 	/* Return from the interrupt. */
 	addq $16, %rsp
-	addq $32, %rsp // FIXME need this?
 
     pushq IF_SS(%rdi)
     pushq IF_RSP(%rdi)
     pushq IF_RFLAGS(%rdi)
     pushq IF_CS(%rdi)
     pushq IF_RIP(%rdi)
+
+/* I think for context switch we need all of them
+ */
+	movq IF_R8(%rdi), %r8
+	movq IF_R9(%rdi), %r9
+	movq IF_R10(%rdi), %r10
+	movq IF_R11(%rdi), %r11
+	movq IF_R12(%rdi), %r12
+	movq IF_R13(%rdi), %r13
+	movq IF_R14(%rdi), %r14
+    movq IF_R15(%rdi), %r15
+
+	movq IF_RSI(%rdi), %rsi
+	movq IF_RBP(%rdi), %rbp
+	movq IF_RBX(%rdi), %rbx
+	movq IF_RDX(%rdi), %rdx
+	movq IF_RCX(%rdi), %rcx
+
+	movq IF_DS(%rdi), %rax
+	mov %rax, %ds
+	mov %rax, %es
+
+	movq IF_RAX(%rdi), %rax
+	movq IF_RDI(%rdi), %rdi
 
 	iretq
 
