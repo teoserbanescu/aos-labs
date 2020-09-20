@@ -25,9 +25,34 @@ isr_common_stub:
 	/* LAB 3: your code here. */
 	/* Save the register state on the stack. */
 
-// https://canvas.vu.nl/courses/49330/discussion_topics/289392
+/* From handout:
+ * make sure the stack layout matches the definition of struct int frame
+ * Also, cpu pushed
+ * uint64_t int_no, err_code;
+ * uint64_t rip, cs, rflags, rsp, ss;
+ */
+
+    pushq %rax
+    pushq %rcx
+    pushq %rdx
+    pushq %rbx
+    pushq %rbp
+    pushq %rsi
+    pushq %rdi
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+
+    mov %ds, %rax
+    pushq %rax
 
 	/* Recover the segments. */
+// https://canvas.vu.nl/courses/49330/discussion_topics/289392
 	movq $GDT_KDATA, %rax
     mov %rax, %ds
     mov %rax, %ss
