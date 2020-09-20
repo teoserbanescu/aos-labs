@@ -125,6 +125,18 @@ sysret64:
 	/* Return from the system call. */
 	sysretq
 
+/* VERW buffer overwriting details
+ * https://software.intel.com/security-software-guidance/deep-dives/deep-dive-intel-analysis-microarchitectural-data-sampling
+ */
+.global MDS_buff_overwrite
+MDS_buff_overwrite:
+    sub $8, %rsp
+    mov %ds, (%rsp)
+    verw (%rsp)
+    add $8, %rsp
+    ret
+
+
 /* https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3a-part-1-manual.pdf
  * Page 188
  */

@@ -43,8 +43,8 @@ static int remove_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
         page = pa2page(PAGE_ADDR(*entry));
         page_decref(page);
         tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
-        *entry = 0;
-    }
+		*entry = 0;
+	}
 
 	return 0;
 }

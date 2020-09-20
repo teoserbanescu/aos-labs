@@ -25,6 +25,7 @@ static int insert_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
         // PTE already points to a present page
 	    page_decref(pa2page(PAGE_ADDR(*entry)));
         tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
+		*entry = 0;	// BONUS_LAB3 Foreshadow
 	}
 
     // Page is not present, insert it.
@@ -52,7 +53,8 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
         // PTE already points to a present page
         page_decref(pa2page(PAGE_ADDR(*entry)));
         tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
-    }
+		*entry = 0;	// BONUS_LAB3 Foreshadow
+	}
 
     // Page is not present, insert it.
     if (page->pp_order == BUDDY_4K_PAGE) {

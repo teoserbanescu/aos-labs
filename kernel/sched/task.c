@@ -307,6 +307,10 @@ void task_destroy(struct task *task)
  */
 void task_pop_frame(struct int_frame *frame)
 {
+#ifdef BONUS_LAB3
+	MDS_buff_overwrite();	// flush CPU buffers
+#endif
+
 	switch (frame->int_no) {
 #ifdef LAB3_SYSCALL
 	case 0x80: sysret64(frame); break;
