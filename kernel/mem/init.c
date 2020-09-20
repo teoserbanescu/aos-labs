@@ -49,6 +49,44 @@ int pml4_setup(struct boot_info *boot_info)
 	return 0;
 }
 
+// BONUS_LAB3 help! shouldn't this work to set SMEP/SMAP?
+// Doing it like this does not generate a fault
+
+/* Intel manual SMAP: supervisor-mode access prevention.
+ * If CPUID.(EAX=07H,ECX=0H):EBX.SMAP [bit 20] = 1, CR4.SMAP may be set to 1, enabling supervisor-mode
+ * access prevention (see Section 4.6).
+ * */
+void supervisor_memory_protection_init(void) {
+#define CPUID_SMEP 7
+#define CPUID_SMAP 20
+
+	uint32_t eax, ebx, ecx, edx;
+	uintptr_t cr4, cr4_old;
+
+	eax = 7;
+	ecx = 0;
+
+	cpuid(0, &eax, &ebx, &ecx, &edx);
+
+	cr4 = read_cr4();
+	cr4_old = cr4;
+
+	if (ebx & CPUID_SMEP) {
+		cr4 |= CR4_SMEP;
+	}
+
+	if (ebx & CPUID_SMAP) {
+		cr4 |= CR4_SMAP;
+	}
+
+	if (cr4 == cr4_old) {
+		cprintf("SMEP/SMAP not available\n");
+	}
+	else {
+		write_cr4(cr4);
+	}
+}
+
 /*
  * Set up a four-level page table:
  * kernel_pml4 is its linear (virtual) address of the root
@@ -130,6 +168,8 @@ void mem_init(struct boot_info *boot_info)
 
 	/* Check the buddy allocator. */
 //	lab2_check_buddy(boot_info);
+
+	supervisor_memory_protection_init();
 }
 
 /*
