@@ -651,6 +651,8 @@ void int_dispatch(struct int_frame *frame)
 		case INT_PAGE_FAULT:
 			page_fault_handler(frame);
 			return;
+		case INT_BREAK:
+			while(1) monitor(NULL);
 	default: break;
 	}
 
