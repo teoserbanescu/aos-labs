@@ -62,7 +62,25 @@ struct vma *add_executable_vma(struct task *task, char *name, void *addr,
 	size_t size, int flags, void *src, size_t len)
 {
 	/* LAB 4: your code here. */
-	return NULL;
+    struct vma *vma;
+
+    vma = kmalloc(sizeof(*vma));
+    vma->vm_name = name;
+    list_init(&vma->vm_mmap);
+    vma->vm_base = addr;
+    vma->vm_end = addr + size;
+    vma->vm_src = src;
+    vma->vm_len = len;
+    vma->vm_flags = flags;
+
+    if (insert_vma(task, vma) == -1) {
+        cprintf("insert_vma: There is already a VMA that overlaps")
+        return NULL;
+    }
+
+    // FIXME merge with adjacent VMAs
+
+	return vma;
 }
 
 /* A simplified wrapper to add anonymous VMAs, i.e. VMAs not backed by an
@@ -87,6 +105,18 @@ struct vma *add_vma(struct task *task, char *name, void *addr, size_t size,
 	int flags)
 {
 	/* LAB 4: your code here. */
+//	struct vma *vma;
+//
+//	vma = kmalloc(sizeof(*vma));
+//	vma->vm_name = name;
+//    list_init(&vma->vm_mmap)
+//    vma->vm_base = addr;
+//    vma->vm_end = addr + size; // FIXME size?
+//    vma->vm_src
+//    vma->vm_len
+//    vma->vm_flags = flags;
+
+
 	return NULL;
 }
 
