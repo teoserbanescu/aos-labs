@@ -74,7 +74,7 @@ struct vma *add_executable_vma(struct task *task, char *name, void *addr,
     vma->vm_flags = flags;
 
     if (insert_vma(task, vma) == -1) {
-        cprintf("insert_vma: There is already a VMA that overlaps")
+        cprintf("insert_vma: There is already a VMA that overlaps");
         return NULL;
     }
 
