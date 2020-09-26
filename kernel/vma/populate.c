@@ -27,6 +27,11 @@ int do_populate_vma(struct task *task, void *base, size_t size,
 
     populate_region(task->task_pml4, base, size, flags);
     // FIXME memcpy if vma->vm_src is present.
+    if (vma->vm_src) {
+        memcpy(base, vma->vm_src, vma->vm_len);
+    }
+    //		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+
     protect_region(task->task_pml4, base, size, flags);
 	return 0;
 }
