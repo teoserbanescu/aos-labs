@@ -215,26 +215,19 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 			continue;
 		}
 
-//		flags = PAGE_USER | PAGE_PRESENT;
-//		flags |= (ph->p_flags & ELF_PROG_FLAG_WRITE) ? PAGE_WRITE : 0;
-//		flags |= !(ph->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
         flags = VM_READ;
-		flags |= (ph->p_flags & ELF_PROG_FLAG_WRITE) ? VM_WRITE : 0;
-        flags |= (ph->p_flags & ELF_PROG_FLAG_EXEC) ? VM_EXEC : 0;
-
-
-//		populate_region(task->task_pml4, (void *)ph->p_va, ph->p_memsz, flags);
-//
-//		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
-//		protect_region(task->task_pml4, (void*)ph->p_va, ph->p_memsz, flags);
-        if (flags & VM_EXEC) {
-            // FIXME add name
-            add_executable_vma(task, "", (void *)ph->p_va, ph->p_memsz, flags,
-                               (void *)binary + ph->p_offset, ph->p_filesz);
-        } else {
-            // FIXME add name
-            add_anonymous_vma(task, "", (void *)ph->p_va, ph->p_memsz, flags);
-        }
+		if (ph->p_flags & ELF_PROG_FLAG_WRITE) {
+			flags |= VM_WRITE;
+			add_anonymous_vma(task, ".data", (void *)ph->p_va, ph->p_memsz, flags);
+		}
+		else if (ph->p_flags & ELF_PROG_FLAG_EXEC) {
+			flags |= VM_EXEC;
+			add_executable_vma(task, ".text", (void *)ph->p_va, ph->p_memsz, flags,
+					  (void *)binary + ph->p_offset, ph->p_filesz);
+		}
+		else {
+			add_anonymous_vma(task, ".rodata", (void *)ph->p_va, ph->p_memsz, flags);
+		}
 	}
 
 	/* Now map one page for the program's initial stack at virtual address
@@ -242,13 +235,8 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 	 */
 
 	/* LAB 3: your code here. */
-//	flags = PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC | PAGE_USER;
-//	populate_region(task->task_pml4, (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, flags);
-//	protect_region(task->task_pml4, (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, flags);
-
     flags = VM_READ | VM_WRITE;
-    // FIXME add name
-    add_anonymous_vma(task, "", (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, flags);
+    add_anonymous_vma(task, "stack", (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, flags);
 
 	task->task_frame.rsp = USTACK_TOP;
 	task->task_frame.rip = elf_hdr->e_entry;
@@ -291,6 +279,7 @@ void task_free(struct task *task)
 	tasks[task->task_pid] = NULL;
 
 	/* Unmap the user pages. */
+	free_vmas(task);
 	unmap_user_pages(task->task_pml4);
 
 	/* Note the task's demise. */
