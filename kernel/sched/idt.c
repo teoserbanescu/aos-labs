@@ -11,6 +11,8 @@
 
 #include <kernel/sched/task.h>
 
+#include <kernel/vma/pfault.h>
+
 
 /* Defined in stubs.S */
 extern void isr0();
@@ -713,13 +715,16 @@ void page_fault_handler(struct int_frame *frame)
 
 	/* Handle kernel-mode page faults. */
 	/* LAB 3: your code here. */
-	// FIXME handle kernel fault
+    if ((frame->cs & 3) == 0) {
+        panic("Kernel-mode page fault");
+    }
 
 	/* We have already handled kernel-mode exceptions, so if we get here, the
 	 * page fault has happened in user mode.
 	 */
-    // FIXME handle user fault
-    // task_page_fault_handler(cur_task, fault_va, flags)
+	// FIXME are flags correct?
+    task_page_fault_handler(cur_task, fault_va, frame->rflags);
+
 
 	/* Destroy the task that caused the fault. */
 	cprintf("[PID %5u] user fault va %p ip %p\n",
