@@ -9,6 +9,8 @@
 #include <kernel/mem.h>
 #include <kernel/sched.h>
 
+#include <kernel/vma/syscall.h>
+
 extern void syscall64(void);
 
 void syscall_init(void)
@@ -84,6 +86,8 @@ int64_t syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3,
 			return sys_getpid();
 		case SYS_kill:
 			return sys_kill(a2);
+	    case SYS_mquery:
+            return sys_mquery((struct vma_info*)a1, (void *)a2);
 	default:
 		return -ENOSYS;
 	}
