@@ -2,6 +2,7 @@
 
 void print_vmas(void)
 {
+    printf("print_vmas\n");
 	struct vma_info info;
 	void *addr = NULL;
 
