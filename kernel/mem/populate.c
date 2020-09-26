@@ -15,8 +15,16 @@ static int populate_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct populate_info *info = walker->udata;
 
 	/* LAB 3: your code here. */
-	ptbl_alloc(entry, base, end, walker);
-
+	if (*entry & PAGE_PRESENT) {
+		return 0;
+	}
+	else {
+		page = page_alloc(ALLOC_ZERO);
+		if (!page)
+			panic("ptbl_alloc page alloc no mem\n");
+		page->pp_ref++;
+		*entry = PAGE_ADDR(page2pa(page)) | info->flags;
+	}
 	return 0;
 }
 

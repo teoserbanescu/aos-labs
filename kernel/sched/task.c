@@ -62,10 +62,7 @@ void task_init(void)
 	 * to tasks.
 	 */
 	/* LAB 3: your code here. */
-    for (int i = 0; i < sizeof(uintptr_t) * pid_max; i += PAGE_SIZE) {
-        struct page_info *page = page_alloc(ALLOC_ZERO);	/*pointers are NULL because of ALLOC_ZERO*/
-        page_insert(kernel_pml4, page,  (void *) PIDMAP_BASE + i, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
-    }
+	populate_region(kernel_pml4, (void *)PIDMAP_BASE,  sizeof(uintptr_t) * pid_max, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 }
 
 /* Sets up the virtual address space for the task. */
@@ -206,6 +203,8 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 
 	elf_hdr = (struct elf *)binary;
 	ph = (struct elf_proghdr *)((uint8_t *)elf_hdr + elf_hdr->e_phoff);
+	load_pml4((void *)PADDR(task->task_pml4)); // has to be here to reload address space
+
 
 	for (i = 0; i < elf_hdr->e_phnum; ++i, ++ph) {
 		if (ph->p_type != ELF_PROG_LOAD || ph->p_va == 0 || ph->p_memsz == 0) {
@@ -217,7 +216,6 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 		flags |= !(ph->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
 
 		populate_region(task->task_pml4, (void *)ph->p_va, ph->p_memsz, flags);
-		load_pml4((void *)PADDR(task->task_pml4)); // has to be here to reload address space
 
 		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
 		protect_region(task->task_pml4, (void*)ph->p_va, ph->p_memsz, flags);
@@ -231,7 +229,6 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 	flags = PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC | PAGE_USER;
 	populate_region(task->task_pml4, (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, flags);
 	protect_region(task->task_pml4, (void *) USTACK_TOP - PAGE_SIZE, PAGE_SIZE, flags);
-//	load_pml4((void *)PADDR(task->task_pml4));
 
 	task->task_frame.rsp = USTACK_TOP;
 	task->task_frame.rip = elf_hdr->e_entry;
