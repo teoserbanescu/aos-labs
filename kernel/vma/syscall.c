@@ -105,9 +105,8 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
         return MAP_FAILED;
     }
 
-    // FIXME Some configurations of the protection flags are not supported on x86-64,
-    // make sure that those fail.
-    // PROT_NONE, write executable
+    // Some configurations of the protection flags are not supported on x86-64.
+    //FIXME are these checks correct?
     if ((prot == PROT_WRITE) ||
         (prot == PROT_EXEC) ||
         ((prot & (PROT_WRITE | PROT_EXEC)) == (PROT_WRITE | PROT_EXEC))) {
@@ -115,7 +114,8 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
     }
 
     if (flags & MAP_FIXED) {
-        // FIXME If the user passes MAP FIXED, remove any previous mappings.
+        // If the user passes MAP FIXED, remove any previous mappings.
+        sys_munmap(addr, len);
     }
 
     vm_flags = 0;
