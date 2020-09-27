@@ -14,23 +14,16 @@ int do_populate_vma(struct task *task, void *base, size_t size,
 {
 	/* LAB 4: your code here. */
     uint64_t flags;
-//		flags = PAGE_USER | PAGE_PRESENT;
-//		flags |= (ph->p_flags & ELF_PROG_FLAG_WRITE) ? PAGE_WRITE : 0;
-//		flags |= !(ph->p_flags & ELF_PROG_FLAG_EXEC) ? PAGE_NO_EXEC : 0;
-//		populate_region(task->task_pml4, (void *)ph->p_va, ph->p_memsz, flags);
-//
-//		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
-//		protect_region(task->task_pml4, (void*)ph->p_va, ph->p_memsz, flags);
+
     flags = PAGE_USER | PAGE_PRESENT;
     flags |= (vma->vm_flags & VM_WRITE) ? PAGE_WRITE : 0;
     flags |= !(vma->vm_flags & VM_EXEC) ? PAGE_NO_EXEC : 0;
 
     populate_region(task->task_pml4, base, size, flags);
-    // FIXME memcpy if vma->vm_src is present.
+    dump_page_tables(task->task_pml4, 0);
     if (vma->vm_src) {
-        memcpy(base, vma->vm_src, vma->vm_len);
+        memcpy(base, vma->vm_src, size);
     }
-    //		memcpy((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
 
     protect_region(task->task_pml4, base, size, flags);
 	return 0;

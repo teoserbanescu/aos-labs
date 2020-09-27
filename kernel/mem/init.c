@@ -169,7 +169,7 @@ void mem_init(struct boot_info *boot_info)
 	/* Check the buddy allocator. */
 //	lab2_check_buddy(boot_info);
 
-	supervisor_memory_protection_init();
+//	supervisor_memory_protection_init();
 }
 
 /*
