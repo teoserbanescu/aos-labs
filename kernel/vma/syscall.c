@@ -93,20 +93,39 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
 	/* LAB 4: your code here. */
 	struct vma *vma;
 	int ret;
+    uint64_t vm_flags;
 
     /* Do not leak information about the kernel space. */
     if (addr >= (void *)USER_LIM) {
         return MAP_FAILED;
     }
 
-    vma = add_vma(cur_task, "user", addr, len, flags);
+    // The only mappings currently supported are MAP ANONYMOUS | MAP PRIVATE.
+    if ((flags & (MAP_ANONYMOUS | MAP_PRIVATE)) != (MAP_ANONYMOUS | MAP_PRIVATE)) {
+        return MAP_FAILED;
+    }
+
+    // FIXME Some configurations of the protection flags are not supported on x86-64,
+    // make sure that those fail.
+
+    if (flags & MAP_FIXED) {
+        // FIXME If the user passes MAP FIXED, remove any previous mappings.
+    }
+
+    vm_flags = 0;
+    vm_flags |= (prot & PROT_READ) ? VM_READ : 0;
+    vm_flags |= (prot & PROT_WRITE) ? VM_WRITE : 0;
+    vm_flags |= (prot & PROT_EXEC) ? VM_EXEC : 0;
+
+    vma = add_vma(cur_task, "user", addr, len, vm_flags);
 
     if (vma != NULL) {
-        // FIXME populate now?
-//        ret = populate_vma_range(cur_task, ROUNDDOWN(addr, PAGE_SIZE), vma->vm_end - ROUNDDOWN(addr, PAGE_SIZE), flags);
-//        if (ret < 0) {
-//            return MAP_FAILED;
-//        }
+        if (flags & MAP_POPULATE) {
+            ret = populate_vma_range(cur_task, ROUNDDOWN(addr, PAGE_SIZE), vma->vm_end - ROUNDDOWN(addr, PAGE_SIZE), flags);
+            if (ret < 0) {
+                return MAP_FAILED;
+            }
+        }
 
         return ROUNDDOWN(vma->vm_base, PAGE_SIZE);
     }
