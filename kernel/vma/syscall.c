@@ -115,6 +115,11 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
 
     if (flags & MAP_FIXED) {
         // If the user passes MAP FIXED, remove any previous mappings.
+        // The only safe use for MAP_FIXED is where the address range specified
+        // by addr and length was previously reserved using another mapping.
+        if (addr == NULL) {
+            return MAP_FAILED;
+        }
         sys_munmap(addr, len);
     }
 
