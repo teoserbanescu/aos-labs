@@ -105,17 +105,44 @@ struct vma *add_vma(struct task *task, char *name, void *addr, size_t size,
 	int flags)
 {
 	/* LAB 4: your code here. */
-//	struct vma *vma;
-//
-//	vma = kmalloc(sizeof(*vma));
-//	vma->vm_name = name;
-//    list_init(&vma->vm_mmap)
-//    vma->vm_base = addr;
-//    vma->vm_end = addr + size; // FIXME size?
-//    vma->vm_src
-//    vma->vm_len
-//    vma->vm_flags = flags;
+	struct list *node, *prev;
+	struct vma *vma, *vma_prev;
 
+	if (addr)
+	{
+//		end address greater than the requested address
+		struct vma *vma = find_vma(NULL, NULL, &task->task_rb, addr);
+		if(vma != NULL) {
+//			check if we do not use space from the left neighbour
+			if(vma->vm_base >= addr + size) {
+				return merge_vmas(task, add_anonymous_vma(task, name, addr, size, flags));
+			}
+		}
+		else {
+//			check if we do not use space from the right neighbour
+			vma = find_vma(NULL, NULL, &task->task_rb, addr + size);
+			if(vma->vm_base >= addr + size) {
+				return merge_vmas(task, add_anonymous_vma(task, name, addr, size, flags));
+			}
+		}
+//			we can not allocate at this addr because neighbour uses this space
+//			try to find space at any addr as we would if we were not given an addr
+		addr = NULL;
+	}
+
+//		The last vma should be the stack which is at the and of the user space
+	list_foreach_safe_rev(&task->task_mmap, node, prev) {
+		vma = container_of(node, struct vma, vm_mmap);
+		vma_prev = container_of(prev, struct vma, vm_mmap);
+
+		if(vma->vm_base >= vma_prev->vm_end + size) {
+			addr = vma->vm_base-size;
+			break;
+		}
+	}
+
+	if (addr)
+		return merge_vmas(task, add_anonymous_vma(task, name, addr, size, flags));
 
 	return NULL;
 }

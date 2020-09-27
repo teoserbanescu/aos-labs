@@ -215,7 +215,11 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 			continue;
 		}
 
-        flags = VM_READ;
+		cprintf("type=%x va=%p mem_sz=%u file_sz=%u\n",
+				ph->p_type, ph->p_va, ph->p_memsz, ph->p_filesz);
+
+
+		flags = VM_READ;
 		if (ph->p_flags & ELF_PROG_FLAG_WRITE) {
 			flags |= VM_WRITE;
 			add_anonymous_vma(task, ".data", (void *)ph->p_va, ph->p_memsz, flags);
