@@ -108,7 +108,8 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
     // FIXME Some configurations of the protection flags are not supported on x86-64,
     // make sure that those fail.
     // PROT_NONE, write executable
-    if ((prot == PROT_NONE) ||
+    if ((prot == PROT_WRITE) ||
+        (prot == PROT_EXEC) ||
         ((prot & (PROT_WRITE | PROT_EXEC)) == (PROT_WRITE | PROT_EXEC))) {
         return MAP_FAILED;
     }
@@ -126,7 +127,7 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
 
     if (vma != NULL) {
         if (flags & MAP_POPULATE) {
-            ret = populate_vma_range(cur_task, ROUNDDOWN(addr, PAGE_SIZE), vma->vm_end - ROUNDDOWN(addr, PAGE_SIZE), flags);
+            ret = populate_vma_range(cur_task, ROUNDDOWN(addr, PAGE_SIZE), vma->vm_end - ROUNDDOWN(addr, PAGE_SIZE), vm_flags);
             if (ret < 0) {
                 return MAP_FAILED;
             }
