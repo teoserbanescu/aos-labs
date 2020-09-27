@@ -716,6 +716,9 @@ void page_fault_handler(struct int_frame *frame)
 	/* Handle kernel-mode page faults. */
 	/* LAB 3: your code here. */
     if ((frame->cs & 3) == 0) {
+        cprintf("[PID %5u] user fault va %p ip %p\n",
+                cur_task->task_pid, fault_va, frame->rip);
+        print_int_frame(frame);
         panic("Kernel-mode page fault");
     }
 
@@ -723,8 +726,10 @@ void page_fault_handler(struct int_frame *frame)
 	 * page fault has happened in user mode.
 	 */
 	// FIXME are flags correct?
-    task_page_fault_handler(cur_task, fault_va, frame->rflags);
-
+    ret = task_page_fault_handler(cur_task, fault_va, frame->rflags);
+    if (ret == 0) {
+        task_run(cur_task);
+    }
 
 	/* Destroy the task that caused the fault. */
 	cprintf("[PID %5u] user fault va %p ip %p\n",
