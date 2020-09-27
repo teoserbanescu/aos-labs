@@ -91,7 +91,27 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
 	uintptr_t offset)
 {
 	/* LAB 4: your code here. */
-	return NULL;
+	struct vma *vma;
+	int ret;
+
+    /* Do not leak information about the kernel space. */
+    if (addr >= (void *)USER_LIM) {
+        return MAP_FAILED;
+    }
+
+    vma = add_vma(cur_task, "user", addr, len, flags);
+
+    if (vma != NULL) {
+        // FIXME populate now?
+//        ret = populate_vma_range(cur_task, ROUNDDOWN(addr, PAGE_SIZE), vma->vm_end - ROUNDDOWN(addr, PAGE_SIZE), flags);
+//        if (ret < 0) {
+//            return MAP_FAILED;
+//        }
+
+        return ROUNDDOWN(vma->vm_base, PAGE_SIZE);
+    }
+
+	return MAP_FAILED;
 }
 
 void sys_munmap(void *addr, size_t len)
