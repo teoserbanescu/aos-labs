@@ -226,7 +226,8 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 					  (void *)binary + ph->p_offset, ph->p_filesz);
 		}
 		else {
-			add_anonymous_vma(task, ".rodata", (void *)ph->p_va, ph->p_memsz, flags);
+			add_executable_vma(task, ".rodata", (void *)ph->p_va, ph->p_memsz, flags,
+							   (void *)binary + ph->p_offset, ph->p_filesz);
 		}
 	}
 
