@@ -29,10 +29,14 @@ int do_remove_vma(struct task *task, void *base, size_t size, struct vma *vma,
 	void *udata)
 {
 	/* LAB 4: your code here. */
+	struct vma *vma_to_remove;
 
-	//FIXME split vma into address range [base, base + size)
+	vma_to_remove = split_vmas(task, vma, base, size);
+
 	unmap_page_range(task->task_pml4, base, size);
-	remove_vma(task, vma);
+
+	remove_vma(task, vma_to_remove);
+	kfree(vma_to_remove);
 
 	return 0;
 }
