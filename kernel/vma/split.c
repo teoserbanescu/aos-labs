@@ -10,7 +10,20 @@
 struct vma *split_vma(struct task *task, struct vma *lhs, void *addr)
 {
 	/* LAB 4: your code here. */
-	return NULL;
+	struct vma *rhs;
+
+    if (lhs->vm_base == addr || lhs->vm_end == addr) {
+        return lhs;
+    }
+
+    rhs = add_anonymous_vma(task, lhs->vm_name, addr,
+                         lhs->vm_end - addr, lhs->vm_flags);
+
+    //FIXME support executable VMAs too?
+
+    lhs->vm_end = addr;
+
+	return rhs;
 }
 
 /* Given a task and a VMA, this function first splits the VMA into a left-hand
@@ -22,6 +35,11 @@ struct vma *split_vma(struct task *task, struct vma *lhs, void *addr)
 struct vma *split_vmas(struct task *task, struct vma *vma, void *base, size_t size)
 {
 	/* LAB 4: your code here. */
-	return vma;
+	struct vma *middle, *rhs;
+
+	middle = split_vma(task, vma, base);
+	rhs = split_vma(task, middle, base + size);
+
+	return middle;
 }
 
