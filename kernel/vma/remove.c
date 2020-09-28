@@ -56,6 +56,14 @@ int do_unmap_vma(struct task *task, void *base, size_t size, struct vma *vma,
 	void *udata)
 {
 	/* LAB 4: your code here. */
+	physaddr_t *entry;
+
+	page_lookup(task->task_pml4, base, &entry);
+
+	if (!(*entry & PAGE_DIRTY)) {
+	    unmap_page_range(task->task_pml4, base, size);
+	}
+
 	return 0;
 }
 
