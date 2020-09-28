@@ -78,9 +78,7 @@ struct vma *add_executable_vma(struct task *task, char *name, void *addr,
         return NULL;
     }
 
-    // FIXME merge with adjacent VMAs
-
-	return vma;
+    return merge_vmas(task, vma);
 }
 
 /* A simplified wrapper to add anonymous VMAs, i.e. VMAs not backed by an
@@ -115,15 +113,15 @@ struct vma *add_vma(struct task *task, char *name, void *addr, size_t size,
 		if(vma != NULL) {
 //			check if we do not use space from the left neighbour
 			if(vma->vm_base >= addr + size) {
-				return merge_vmas(task, add_anonymous_vma(task, name, addr, size, flags));
+                return add_anonymous_vma(task, name, addr, size, flags);
 			}
 		}
 		else {
 //			check if we do not use space from the right neighbour
 			vma = find_vma(NULL, NULL, &task->task_rb, addr + size);
 			if(vma->vm_base >= addr + size) {
-				return merge_vmas(task, add_anonymous_vma(task, name, addr, size, flags));
-			}
+                return add_anonymous_vma(task, name, addr, size, flags);
+            }
 		}
 //			we can not allocate at this addr because neighbour uses this space
 //			try to find space at any addr as we would if we were not given an addr
@@ -142,7 +140,7 @@ struct vma *add_vma(struct task *task, char *name, void *addr, size_t size,
 	}
 
 	if (addr)
-		return merge_vmas(task, add_anonymous_vma(task, name, addr, size, flags));
+		return add_anonymous_vma(task, name, addr, size, flags);
 
 	return NULL;
 }
