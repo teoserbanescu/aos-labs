@@ -106,7 +106,6 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
     }
 
     // Some configurations of the protection flags are not supported on x86-64.
-    //FIXME are these checks correct?
     if ((prot == PROT_WRITE) ||
         (prot == PROT_EXEC) ||
         ((prot & (PROT_WRITE | PROT_EXEC)) == (PROT_WRITE | PROT_EXEC))) {
@@ -153,7 +152,7 @@ void sys_munmap(void *addr, size_t len)
 int sys_mprotect(void *addr, size_t len, int prot)
 {
 	/* LAB 4 (bonus): your code here. */
-	return -ENOSYS;
+	return protect_vma_range(cur_task, addr, len, prot);
 }
 
 int sys_madvise(void *addr, size_t len, int advise)

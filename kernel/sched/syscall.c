@@ -93,6 +93,8 @@ int64_t syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3,
 	    case SYS_munmap:
 	        sys_munmap((void *)a1, a2);
 	        return 0;
+	    case SYS_mprotect:
+	        return sys_mprotect((void *)a1, a2, a3);
 	default:
 		return -ENOSYS;
 	}
