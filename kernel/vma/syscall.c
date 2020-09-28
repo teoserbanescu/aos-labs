@@ -95,7 +95,7 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
 	int ret;
     uint64_t vm_flags;
 
-    /* Do not leak information about the kernel space. */
+    /* Do not map addresses in the kernel space. */
     if (addr >= (void *)USER_LIM) {
         return MAP_FAILED;
     }
@@ -146,18 +146,55 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
 void sys_munmap(void *addr, size_t len)
 {
 	/* LAB 4: your code here. */
-	remove_vma_range(cur_task, addr, len);
+
+	/* Do not modify the kernel space. */
+    if (addr + len >= (void *)USER_LIM) {
+        return;
+    }
+
+    remove_vma_range(cur_task, addr, len);
 }
 
 int sys_mprotect(void *addr, size_t len, int prot)
 {
 	/* LAB 4 (bonus): your code here. */
+
+	/* Do not modify the kernel space. */
+    if (addr + len >= (void *)USER_LIM) {
+        return -1;
+    }
+
 	return protect_vma_range(cur_task, addr, len, prot);
 }
 
 int sys_madvise(void *addr, size_t len, int advise)
 {
 	/* LAB 4 (bonus): your code here. */
-	return -ENOSYS;
+    struct vma *vma;
+
+    /* Do not modify the kernel space. */
+    if (addr + len >= (void *)USER_LIM) {
+        return -1;
+    }
+
+    if (addr == NULL) {
+        return -1;
+    }
+
+    if (advise & MADV_WILLNEED) {
+        vma = find_vma(NULL, NULL, &cur_task->task_rb, addr);
+
+        if (vma->vm_end < addr + len) {
+            return -1;
+        }
+
+        return populate_vma_range(cur_task, addr, len, vma->vm_flags);
+    }
+
+    if (advise & MADV_DONTNEED) {
+        return unmap_vma_range(cur_task, addr, len);
+    }
+
+    return -1;
 }
 
