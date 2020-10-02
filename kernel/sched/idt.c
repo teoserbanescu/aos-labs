@@ -725,7 +725,6 @@ void page_fault_handler(struct int_frame *frame)
 	/* We have already handled kernel-mode exceptions, so if we get here, the
 	 * page fault has happened in user mode.
 	 */
-	// FIXME are flags correct?
     ret = task_page_fault_handler(cur_task, fault_va, frame->rflags);
     if (ret == 0) {
         task_run(cur_task);
