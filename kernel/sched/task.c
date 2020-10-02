@@ -13,6 +13,8 @@ pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
 size_t nuser_tasks = 0;
 
+extern struct list runq;
+
 /* Looks up the respective task for a given PID.
  * If check_perm is non-zero, this function checks if the PID maps to the
  * current task or if the current task is the parent of the task that the PID
@@ -266,6 +268,7 @@ void task_create(uint8_t *binary, enum task_type type)
 		nuser_tasks++;
 	}
 	/* LAB 5: your code here. */
+	list_push(&runq, &task->task_node);
 }
 
 /* Free the task and all of the memory that is used by it.
@@ -302,14 +305,16 @@ void task_free(struct task *task)
  */
 void task_destroy(struct task *task)
 {
-	task_free(task);
+    /* LAB 5: your code here. */
+    list_remove(&task->task_node);
+    task_free(task);
+    sched_yield();
 
-	/* LAB 5: your code here. */
 	cprintf("Destroyed the only task - nothing more to do!\n");
+//	while (1) {
+//		monitor(NULL);
+//	}
 
-	while (1) {
-		monitor(NULL);
-	}
 }
 
 /*
@@ -368,7 +373,11 @@ void task_run(struct task *task)
 		cur_task = task;
 	}
 
-//	should set cur_task, not task
+	// FIXME when do we add current task?
+    if (list_is_empty(&runq)) {
+        list_push(&runq, &cur_task->task_node);
+    }
+
 	if (cur_task->task_status == TASK_RUNNING) {
 		cur_task->task_status = TASK_RUNNABLE;
 	}

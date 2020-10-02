@@ -22,6 +22,16 @@ void sched_init(void)
 void sched_yield(void)
 {
 	/* LAB 5: your code here. */
+	struct list *node;
+	struct task *next_task;
+
+	node = list_pop_left(&runq);
+	if (node != NULL) {
+        next_task = container_of(node, struct task, task_node);
+        task_run(next_task);
+    } else {
+	    sched_halt();
+	}
 }
 
 /* For now jump into the kernel monitor. */
