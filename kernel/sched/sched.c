@@ -29,6 +29,7 @@ void sched_yield(void)
 	if (node != NULL) {
         next_task = container_of(node, struct task, task_node);
         task_run(next_task);
+        // FIXME is this condition right?
     } else if (nuser_tasks == 0) {
 	    sched_halt();
 	}
@@ -37,7 +38,9 @@ void sched_yield(void)
 /* For now jump into the kernel monitor. */
 void sched_halt()
 {
-	while (1) {
+    cprintf("Destroyed the only task - nothing more to do!\n");
+
+    while (1) {
 		monitor(NULL);
 	}
 }

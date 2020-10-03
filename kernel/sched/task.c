@@ -308,9 +308,9 @@ void task_destroy(struct task *task)
     /* LAB 5: your code here. */
     list_remove(&task->task_node);
     task_free(task);
+    nuser_tasks--;
     sched_yield();
 
-	cprintf("Destroyed the only task - nothing more to do!\n");
 //	while (1) {
 //		monitor(NULL);
 //	}
