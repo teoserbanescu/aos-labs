@@ -16,7 +16,11 @@ pid_t sys_wait(int *rstatus)
 	/* LAB 5: your code here. */
 	struct list *head;
 	struct task *zombie;
-	int pid;
+	pid_t pid;
+
+	if(rstatus == NULL) {
+		return -ECHILD;
+	}
 
 	head = list_head(&cur_task->task_zombies);
 	if (head) {
@@ -48,6 +52,7 @@ pid_t sys_waitpid(pid_t pid, int *rstatus, int opts)
 		return pid;
 	}
 
+	cur_task->task_wait = task;
 	cur_task->task_status = TASK_NOT_RUNNABLE;
 	cur_task = NULL;
 	sched_yield();

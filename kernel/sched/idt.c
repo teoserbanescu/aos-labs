@@ -706,6 +706,8 @@ void int_handler(struct int_frame *frame)
 
 void page_fault_handler(struct int_frame *frame)
 {
+	static int xx = 0;
+	cprintf("%d\n", xx++);
 	void *fault_va;
 	unsigned perm = 0;
 	int ret;

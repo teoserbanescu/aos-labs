@@ -30,7 +30,7 @@ struct task *pid2task(pid_t pid, int check_perm)
 	}
 
 	/* Limit the PID. */
-	if (pid >= pid_max) {
+	if (pid < 0 || pid >= pid_max) {
 		return NULL;
 	}
 
@@ -229,10 +229,6 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 			continue;
 		}
 
-//		cprintf("type=%x va=%p mem_sz=%u file_sz=%u\n",
-//				ph->p_type, ph->p_va, ph->p_memsz, ph->p_filesz);
-
-
 		flags = VM_READ;
 		if (ph->p_flags & ELF_PROG_FLAG_WRITE) {
 			flags |= VM_WRITE;
@@ -283,6 +279,27 @@ void task_create(uint8_t *binary, enum task_type type)
 	list_push(&runq, &task->task_node);
 }
 
+static void task_make_orphans(struct task *task) {
+	struct list *node, *next;
+	struct task *zombie;
+	struct task *child;
+
+	if (!list_is_empty(&task->task_zombies)) {
+		list_foreach_safe(&task->task_zombies, node, next) {
+			zombie = container_of(node, struct task, task_node);
+			task_free(zombie);
+		}
+	}
+
+	if (!list_is_empty(&task->task_children)) {
+		list_foreach_safe(&task->task_children, node, next) {
+			child = container_of(node, struct task, task_child);
+			list_remove(&child->task_child);
+			child->task_ppid = 0;
+		}
+	}
+}
+
 /* Free the task and all of the memory that is used by it.
  */
 void task_free(struct task *task)
@@ -290,6 +307,8 @@ void task_free(struct task *task)
 	struct task *waiting;
 
 	/* LAB 5: your code here. */
+	task_make_orphans(task);
+
 	/* If we are freeing the current task, switch to the kernel_pml4
 	 * before freeing the page tables, just in case the page gets re-used.
 	 */
@@ -300,6 +319,9 @@ void task_free(struct task *task)
 	/* Unmap the task from the PID map. */
 	tasks[task->task_pid] = NULL;
 
+	list_remove(&task->task_child);
+	list_remove(&task->task_node);
+
 	/* Unmap the user pages. */
 	free_vmas(task);
 	unmap_user_pages(task->task_pml4);
@@ -308,11 +330,32 @@ void task_free(struct task *task)
 	cprintf("[PID %5u] Freed task with PID %u\n", cur_task ? cur_task->task_pid : 0,
 	    task->task_pid);
 
-	list_remove(&task->task_child);
-	list_remove(&task->task_node);
+	nuser_tasks--;
 
 	/* Free the task. */
 	kfree(task);
+}
+
+static void task_zombie(struct task *task) {
+	struct task *parent;
+
+	parent = pid2task(task->task_ppid, 0);
+
+	if (!parent || task->task_ppid == 0)
+		return;
+
+//	parent is waiting for us
+	if(parent->task_status == TASK_NOT_RUNNABLE &&
+			parent->task_wait == task) {
+		parent->task_frame.rax = task->task_pid;
+		parent->task_status = TASK_RUNNABLE;
+		list_push(&runq, &parent->task_node);
+		task_free(task);
+	}
+	else {
+		task->task_status = TASK_DYING;
+		list_push(&parent->task_zombies, &task->task_node);
+	}
 }
 
 /* Frees the task. If the task is the currently running task, then this
@@ -324,8 +367,8 @@ void task_destroy(struct task *task)
 	int curr;
 
 	curr = task == cur_task;
-	task_free(task);
-	nuser_tasks--;
+	task_zombie(task);
+
 	if (curr) {
 		cur_task = NULL;
 		sched_yield();
