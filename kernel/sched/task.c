@@ -308,6 +308,9 @@ void task_free(struct task *task)
 	cprintf("[PID %5u] Freed task with PID %u\n", cur_task ? cur_task->task_pid : 0,
 	    task->task_pid);
 
+	list_remove(&task->task_child);
+	list_remove(&task->task_node);
+
 	/* Free the task. */
 	kfree(task);
 }
@@ -321,7 +324,6 @@ void task_destroy(struct task *task)
 	int curr;
 
 	curr = task == cur_task;
-	list_remove(&task->task_node);
 	task_free(task);
 	nuser_tasks--;
 	if (curr) {
