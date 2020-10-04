@@ -25,14 +25,21 @@ void sched_yield(void)
 	struct list *node;
 	struct task *next_task;
 
+	if (cur_task) {
+		list_push(&runq, &cur_task->task_node);
+	}
+
 	node = list_pop_left(&runq);
 	if (node != NULL) {
         next_task = container_of(node, struct task, task_node);
-        task_run(next_task);
-        // FIXME is this condition right?
-    } else if (nuser_tasks == 0) {
-	    sched_halt();
+		task_run(next_task);
+    }
+
+	if (list_is_empty(&runq)) {
+		sched_halt();
 	}
+
+	panic("yield returned");
 }
 
 /* For now jump into the kernel monitor. */

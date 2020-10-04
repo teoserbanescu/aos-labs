@@ -229,8 +229,8 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 			continue;
 		}
 
-		cprintf("type=%x va=%p mem_sz=%u file_sz=%u\n",
-				ph->p_type, ph->p_va, ph->p_memsz, ph->p_filesz);
+//		cprintf("type=%x va=%p mem_sz=%u file_sz=%u\n",
+//				ph->p_type, ph->p_va, ph->p_memsz, ph->p_filesz);
 
 
 		flags = VM_READ;
@@ -259,7 +259,7 @@ static void task_load_elf(struct task *task, uint8_t *binary)
 
 	task->task_frame.rsp = USTACK_TOP;
 	task->task_frame.rip = elf_hdr->e_entry;
-	dump_page_tables(task->task_pml4, PAGE_PRESENT);
+//	dump_page_tables(task->task_pml4, PAGE_PRESENT);
 }
 
 /* Allocates a new task with task_alloc(), loads the named ELF binary using
@@ -317,12 +317,17 @@ void task_free(struct task *task)
  */
 void task_destroy(struct task *task)
 {
-    /* LAB 5: your code here. */
-    list_remove(&task->task_node);
-    task_free(task);
-    nuser_tasks--;
-    sched_yield();
-    panic("yield returned");
+	/* LAB 5: your code here. */
+	int curr;
+
+	curr = task == cur_task;
+	list_remove(&task->task_node);
+	task_free(task);
+	nuser_tasks--;
+	if (curr) {
+		cur_task = NULL;
+		sched_yield();
+	}
 }
 
 /*
@@ -380,11 +385,6 @@ void task_run(struct task *task)
 	if (!cur_task) {
 		cur_task = task;
 	}
-
-	// FIXME when do we add current task?
-    if (list_is_empty(&runq)) {
-        list_push(&runq, &cur_task->task_node);
-    }
 
 	if (cur_task->task_status == TASK_RUNNING) {
 		cur_task->task_status = TASK_RUNNABLE;

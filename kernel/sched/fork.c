@@ -88,12 +88,12 @@ static int copy_vma(struct task *task_dst, struct task *task_src) {
 		vma_src = container_of(node, struct vma, vm_mmap);
 
 		vma_dst = kmalloc(sizeof(struct vma));
-		vma_dst->vm_name	= vma_dst->vm_name;
-		vma_dst->vm_base	= vma_dst->vm_base;
+		vma_dst->vm_name	= vma_src->vm_name;
+		vma_dst->vm_base	= vma_src->vm_base;
 		vma_dst->vm_end		= vma_src->vm_end;
 		vma_dst->vm_src		= vma_src->vm_src;
-		vma_dst->vm_len		= vma_dst->vm_len;
-		vma_dst->vm_flags	= vma_dst->vm_flags;
+		vma_dst->vm_len		= vma_src->vm_len;
+		vma_dst->vm_flags	= vma_src->vm_flags;
 		list_init(&vma_dst->vm_mmap);
 		rb_node_init(&vma_dst->vm_rb);
 
@@ -163,8 +163,8 @@ pid_t sys_fork(void)
 
 	list_init(&clone->task_node);
 	list_push(&runq, &clone->task_node);
-	list_push_left(&runq, &clone->task_node);
-//	list_push(&cur_task->task_children, &clone->task_child);
+//	list_push_left(&runq, &clone->task_node);
+	list_push(&cur_task->task_children, &clone->task_child);
 
 	return clone->task_pid;
 }

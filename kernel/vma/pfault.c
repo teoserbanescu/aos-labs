@@ -22,7 +22,16 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 	if(entry && page &&
 		!(*entry & PAGE_WRITE) &&
 		(vma->vm_flags & VM_WRITE)) {
-		/* FIXME do cow */
+
+		*entry |= PAGE_WRITE;
+		page_copy = page_alloc(BUDDY_4K_PAGE);
+		page_copy->pp_ref++;
+		memcpy(page2kva(page_copy), page2kva(page), PAGE_SIZE);
+
+		*entry = PAGE_ADDR(page2pa(page_copy)) | (*entry & PAGE_MASK);
+		*entry |= PAGE_WRITE;
+		tlb_invalidate(task->task_pml4, va);
+		return 0;
 	}
 	/* End COW */
 

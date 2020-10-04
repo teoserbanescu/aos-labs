@@ -36,7 +36,7 @@ static int lookup_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 		return 0;
 	}
 
-	return -1;
+	return 0;
 }
 
 /* Return the page mapped at virtual address 'va'.
@@ -62,7 +62,7 @@ struct page_info *page_lookup(struct page_table *pml4, void *va,
 		.udata = &info,
 	};
 
-	if (walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE), &walker) < 0 ||
+	if (walk_page_range(pml4, va, va, &walker) < 0 ||
 	    !info.entry)
 		return NULL;
 

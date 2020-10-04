@@ -722,13 +722,15 @@ void page_fault_handler(struct int_frame *frame)
         panic("Kernel-mode page fault");
     }
 
+
 	/* We have already handled kernel-mode exceptions, so if we get here, the
 	 * page fault has happened in user mode.
 	 */
-    ret = task_page_fault_handler(cur_task, fault_va, frame->rflags);
-    if (ret == 0) {
-        task_run(cur_task);
-    }
+
+	ret = task_page_fault_handler(cur_task, fault_va, frame->rflags);
+	if (ret == 0) {
+		task_run(cur_task);
+	}
 
 	/* Destroy the task that caused the fault. */
 	cprintf("[PID %5u] user fault va %p ip %p\n",
