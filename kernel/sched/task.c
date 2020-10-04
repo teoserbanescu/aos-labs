@@ -341,8 +341,10 @@ static void task_zombie(struct task *task) {
 
 	parent = pid2task(task->task_ppid, 0);
 
-	if (!parent || task->task_ppid == 0)
+	if (!parent || task->task_ppid == 0) {
+		task_free(task);
 		return;
+	}
 
 //	parent is waiting for us
 	if(parent->task_status == TASK_NOT_RUNNABLE &&

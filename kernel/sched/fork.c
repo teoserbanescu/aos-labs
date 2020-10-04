@@ -22,10 +22,14 @@ static inline void dup_entry(physaddr_t *entry_dst, physaddr_t *entry_src) {
 
 static int copy_ptbl(struct page_table *dst_pte, struct page_table *src_pte)
 {
+	struct page_info *page;
+
 	for (int i = 0; i < PAGE_TABLE_ENTRIES; ++i) {
 		if (src_pte->entries[i]) {
 			dst_pte->entries[i] = src_pte->entries[i] & ~PAGE_WRITE;
 			src_pte->entries[i] &= ~PAGE_WRITE;
+			page = pa2page(PAGE_ADDR(src_pte->entries[i]));
+			page->pp_ref++;
 		}
 	}
 
