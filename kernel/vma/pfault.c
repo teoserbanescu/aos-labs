@@ -20,12 +20,12 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 	/* COW */
 	page = page_lookup(task->task_pml4, va, &entry);
 	if(entry && page &&
-		!(*entry & PAGE_WRITE) &&
-		(vma->vm_flags & VM_WRITE)) {
-
+			!(*entry & PAGE_WRITE) &&
+			(vma->vm_flags & VM_WRITE)) {
 		*entry |= PAGE_WRITE;
 		page_copy = page_alloc(BUDDY_4K_PAGE);
 		page_copy->pp_ref++;
+		page->pp_ref--;
 		memcpy(page2kva(page_copy), page2kva(page), PAGE_SIZE);
 
 		*entry = PAGE_ADDR(page2pa(page_copy)) | (*entry & PAGE_MASK);

@@ -62,7 +62,7 @@ struct page_info *page_lookup(struct page_table *pml4, void *va,
 		.udata = &info,
 	};
 
-	if (walk_page_range(pml4, va, va, &walker) < 0 ||
+	if (walk_page_range(pml4, va, va+1, &walker) < 0 ||
 	    !info.entry)
 		return NULL;
 
