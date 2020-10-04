@@ -67,7 +67,7 @@ struct vma *add_executable_vma(struct task *task, char *name, void *addr,
     vma = kmalloc(sizeof(*vma));
     vma->vm_name = name;
     list_init(&vma->vm_mmap);
-    vma->vm_base = addr, PAGE_SIZE;
+    vma->vm_base = addr;
     vma->vm_end = ROUNDUP(addr + size, PAGE_SIZE);
     vma->vm_src = src;
     vma->vm_len = len;

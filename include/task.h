@@ -9,6 +9,10 @@
 
 typedef int32_t pid_t;
 
+int task_setup_pid();
+
+struct task *task_alloc(pid_t ppid);
+
 /* Values of task_status in struct task. */
 enum {
 	TASK_DYING = 0,

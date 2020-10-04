@@ -27,18 +27,16 @@ static int lookup_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 /* If the PDE points to a present huge page, store the pointer to the PDE into
  * the info struct of the walker. */
 static int lookup_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
-    struct page_walker *walker) {
-    struct lookup_info *info = walker->udata;
+	struct page_walker *walker) {
+	struct lookup_info *info = walker->udata;
 
-    /* LAB 2: your code here. */
-    if (*entry & PAGE_PRESENT) {
-        if (*entry & PAGE_HUGE) {
-            info->entry = entry;
-        }
-    return 0;
-    }
+	/* LAB 2: your code here. */
+	if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE)) {
+		info->entry = entry;
+		return 0;
+	}
 
-    return -1;
+	return -1;
 }
 
 /* Return the page mapped at virtual address 'va'.

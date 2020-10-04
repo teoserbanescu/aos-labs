@@ -119,7 +119,7 @@ static int pdir_walk_range(struct page_table *pdir, uintptr_t base,
                 return ret;
         }
 
-        ptbl = (struct page_table *) KADDR(PAGE_ADDR(*entry));
+        ptbl = entry2page_table(*entry);
 
         if (*entry & PAGE_PRESENT) {
             if (!(*entry & PAGE_HUGE)) {
@@ -183,7 +183,7 @@ static int pdpt_walk_range(struct page_table *pdpt, uintptr_t base,
                 return ret;
         }
 
-        pdir = (struct page_table *) KADDR(PAGE_ADDR(*entry));
+        pdir = entry2page_table(*entry);
 
         if (*entry & PAGE_PRESENT) {
             if (!(*entry & PAGE_HUGE)) {
@@ -245,7 +245,7 @@ static int pml4_walk_range(struct page_table *pml4, uintptr_t base, uintptr_t en
                 return ret;
         }
 
-        pdpt = (struct page_table *) KADDR(PAGE_ADDR(*entry));
+        pdpt = entry2page_table(*entry);
 
         if (*entry & PAGE_PRESENT) { // should we check entry ?
             ret = pdpt_walk_range(pdpt, addr, addr_end, walker);

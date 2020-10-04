@@ -97,6 +97,31 @@ static int task_setup_vas(struct task *task)
 
 	return 0;
 }
+/* Find a free PID for the task in the PID mapping and associate the
+ * task with that PID.
+ */
+int task_setup_pid(struct task *task) {
+	pid_t pid;
+
+	for (pid = 1; pid < pid_max; ++pid) {
+		if (!tasks[pid]) {
+			tasks[pid] = task;
+			task->task_pid = pid;
+			break;
+		}
+	}
+
+	/* We are out of PIDs. */
+	if (pid == pid_max) {
+		kfree(task);
+		return -1;
+	}
+
+	cprintf("[PID %5u] New task with PID %u\n",
+			cur_task ? cur_task->task_pid : 0, task->task_pid);
+
+	return 0;
+}
 
 /* Allocates and initializes a new task.
  * On success, the new task is returned.
@@ -104,7 +129,6 @@ static int task_setup_vas(struct task *task)
 struct task *task_alloc(pid_t ppid)
 {
 	struct task *task;
-	pid_t pid;
 
 	/* Allocate a new task struct. */
 	task = kmalloc(sizeof *task);
@@ -119,19 +143,7 @@ struct task *task_alloc(pid_t ppid)
 		return NULL;
 	}
 
-	/* Find a free PID for the task in the PID mapping and associate the
-	 * task with that PID.
-	 */
-	for (pid = 1; pid < pid_max; ++pid) {
-		if (!tasks[pid]) {
-			tasks[pid] = task;
-			task->task_pid = pid;
-			break;
-		}
-	}
-
-	/* We are out of PIDs. */
-	if (pid == pid_max) {
+	if (task_setup_pid(task) < 0) {
 		kfree(task);
 		return NULL;
 	}
@@ -151,11 +163,11 @@ struct task *task_alloc(pid_t ppid)
 
 	list_init(&task->task_mmap);
 	rb_init(&task->task_rb);
-
+	list_init(&task->task_node);
+	list_init(&task->task_children);
+	list_init(&task->task_child);
+	list_init(&task->task_zombies);
 	/* You will set task->task_frame.rip later. */
-
-	cprintf("[PID %5u] New task with PID %u\n",
-	        cur_task ? cur_task->task_pid : 0, task->task_pid);
 
 	return task;
 }
@@ -310,11 +322,7 @@ void task_destroy(struct task *task)
     task_free(task);
     nuser_tasks--;
     sched_yield();
-
-//	while (1) {
-//		monitor(NULL);
-//	}
-
+    panic("yield returned");
 }
 
 /*
