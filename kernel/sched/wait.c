@@ -48,6 +48,8 @@ pid_t sys_waitpid(pid_t pid, int *rstatus, int opts)
 	}
 
 	if(task->task_status == TASK_DYING) {
+		cprintf("[PID %5u] Reaping task with PID %u\n", cur_task ? cur_task->task_pid : 0,
+				task->task_pid);
 		task_free(task);
 		return pid;
 	}

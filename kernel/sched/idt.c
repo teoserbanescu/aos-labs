@@ -9,10 +9,12 @@
 #include <kernel/monitor.h>
 #include <kernel/sched/syscall.h>
 
+#include <kernel/sched/sched.h>
 #include <kernel/sched/task.h>
 
 #include <kernel/vma/pfault.h>
 
+#include <kernel/acpi/lapic.h>
 
 /* Defined in stubs.S */
 extern void isr0();
@@ -655,6 +657,9 @@ void int_dispatch(struct int_frame *frame)
 			return;
 		case INT_BREAK:
 			while(1) monitor(NULL);
+		case IRQ_TIMER:
+			lapic_eoi();
+			sched_yield();
 	default: break;
 	}
 

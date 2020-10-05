@@ -25,15 +25,17 @@ void sched_yield(void)
 	struct list *node;
 	struct task *task;
 
-	if (cur_task) {
+	if (cur_task && cur_task->task_status == TASK_RUNNING) {
 		list_push(&runq, &cur_task->task_node);
 	}
 
-	node = list_pop(&runq);
-	if (node != NULL) {
-		task = container_of(node, struct task, task_node);
-		task_run(task);
-    }
+	if (!list_is_empty(&runq)) {
+		node = list_pop(&runq);
+		if (node != NULL) {
+			task = container_of(node, struct task, task_node);
+			task_run(task);
+		}
+	}
 
 	if (list_is_empty(&runq)) {
 		sched_halt();
