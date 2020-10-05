@@ -26,7 +26,12 @@ pid_t sys_wait(int *rstatus)
 	if (head) {
 		zombie = container_of(head, struct task, task_node);
 		pid = zombie->task_pid;
+
+		// Found a zombie child, destroy it.
+		cprintf("[PID %5u] Reaping task with PID %u\n", cur_task ? cur_task->task_pid : 0,
+				zombie->task_pid);
 		task_free(zombie);
+
 		return pid;
 	}
 
@@ -48,6 +53,7 @@ pid_t sys_waitpid(pid_t pid, int *rstatus, int opts)
 	}
 
 	if(task->task_status == TASK_DYING) {
+		// The process is a zombie, destroy it.
 		cprintf("[PID %5u] Reaping task with PID %u\n", cur_task ? cur_task->task_pid : 0,
 				task->task_pid);
 		task_free(task);

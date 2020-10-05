@@ -169,6 +169,7 @@ struct task *task_alloc(pid_t ppid)
 	list_init(&task->task_children);
 	list_init(&task->task_child);
 	list_init(&task->task_zombies);
+
 	/* You will set task->task_frame.rip later. */
 
 	return task;
@@ -286,13 +287,19 @@ static void task_make_orphans(struct task *task) {
 	struct task *zombie;
 	struct task *child;
 
+	// Reap all zombies.
 	if (!list_is_empty(&task->task_zombies)) {
 		list_foreach_safe(&task->task_zombies, node, next) {
 			zombie = container_of(node, struct task, task_node);
+			
+			// Found a zombie child, destroy it.
+			cprintf("[PID %5u] Reaping task with PID %u\n", cur_task ? cur_task->task_pid : 0,
+					zombie->task_pid);
 			task_free(zombie);
 		}
 	}
 
+	// Detach all children.
 	if (!list_is_empty(&task->task_children)) {
 		list_foreach_safe(&task->task_children, node, next) {
 			child = container_of(node, struct task, task_child);
