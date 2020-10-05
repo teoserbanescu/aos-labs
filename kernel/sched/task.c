@@ -23,6 +23,10 @@ int insert_task(struct task *task) {
 }
 
 struct task* get_task() {
+	/* This function chooses the task that executed the least on the CPU
+	 * A red black tree or a priority queue would be a better approach,
+	 * but we choose to iterate through the list for now.
+	 * */
 	struct task *task, *task_min;
 	struct list *node;
 	uint64_t min_time = -1;
