@@ -8,7 +8,7 @@
 #include <kernel/vma.h>
 #include <kernel/sched/task.h>
 
-extern struct list runq;
+//extern struct list runq;
 
 #define ENTRY_FLAGS(x) (((physaddr_t)x) & PAGE_MASK)
 
@@ -166,7 +166,8 @@ pid_t sys_fork(void)
 	}
 
 	list_init(&clone->task_node);
-	list_push(&runq, &clone->task_node);
+//	list_push(&runq, &clone->task_node);
+	insert_task(clone);
 //	list_push_left(&runq, &clone->task_node);
 	list_push(&cur_task->task_children, &clone->task_child);
 

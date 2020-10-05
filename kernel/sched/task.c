@@ -17,6 +17,31 @@ size_t nuser_tasks = 0;
 
 extern struct list runq;
 
+int insert_task(struct task *task) {
+	list_push(&runq, &task->task_node);
+	return 0;
+}
+
+struct task* get_task() {
+	struct task *task, *task_min;
+	struct list *node;
+	uint64_t min_time = -1;
+
+	task_min = NULL;
+	list_foreach(&runq, node) {
+		task = container_of(node, struct task, task_node);
+		if (task->task_runtime < min_time) {
+			min_time = task->task_runtime;
+			task_min = task;
+		}
+	}
+
+	if (task_min) {
+		list_remove(&task_min->task_node);
+	}
+	return task_min;
+}
+
 /* Looks up the respective task for a given PID.
  * If check_perm is non-zero, this function checks if the PID maps to the
  * current task or if the current task is the parent of the task that the PID
@@ -168,12 +193,6 @@ struct task *task_alloc(pid_t ppid)
 
 	task_init_frame(task);
 
-	// This can vary per task if we want to introduce priorities.
-	task->task_time_budget = RUN_TIME_BUDGET;
-	task->task_time_left = RUN_TIME_BUDGET;
-	task->task_start_time = 0;
-	task->task_preempted = 0;
-
 	rb_init(&task->task_rb);
 	list_init(&task->task_mmap);
 	list_init(&task->task_node);
@@ -290,7 +309,8 @@ void task_create(uint8_t *binary, enum task_type type)
 		nuser_tasks++;
 	}
 	/* LAB 5: your code here. */
-	list_push(&runq, &task->task_node);
+//	list_push(&runq, &task->task_node);
+	insert_task(task);
 }
 
 static void task_make_orphans(struct task *task) {
@@ -371,7 +391,8 @@ static void task_zombie(struct task *task) {
 			parent->task_wait == task) {
 		parent->task_frame.rax = task->task_pid;
 		parent->task_status = TASK_RUNNABLE;
-		list_push(&runq, &parent->task_node);
+//		list_push(&runq, &parent->task_node);
+		insert_task(parent);
 		task_free(task);
 	}
 	else {
