@@ -78,3 +78,5 @@ struct task {
 	uint64_t task_time_left;
 	uint64_t task_start_time;
 };
+
+void task_init_frame(struct task *task);

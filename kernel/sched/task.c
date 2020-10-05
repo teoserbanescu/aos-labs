@@ -125,6 +125,16 @@ int task_setup_pid(struct task *task) {
 	return 0;
 }
 
+void task_init_frame(struct task *task) {
+	memset(&task->task_frame, 0, sizeof task->task_frame);
+
+	task->task_frame.ds = GDT_UDATA | 3;
+	task->task_frame.ss = GDT_UDATA | 3;
+	task->task_frame.rsp = USTACK_TOP;
+	task->task_frame.cs = GDT_UCODE | 3;
+	task->task_frame.rflags = FLAGS_IF;
+}
+
 /* Allocates and initializes a new task.
  * On success, the new task is returned.
  */
@@ -156,14 +166,7 @@ struct task *task_alloc(pid_t ppid)
 	task->task_status = TASK_RUNNABLE;
 	task->task_runs = 0;
 
-	memset(&task->task_frame, 0, sizeof task->task_frame);
-
-	task->task_frame.ds = GDT_UDATA | 3;
-	task->task_frame.ss = GDT_UDATA | 3;
-	task->task_frame.rsp = USTACK_TOP;
-	task->task_frame.cs = GDT_UCODE | 3;
-
-	task->task_frame.rflags = FLAGS_IF;
+	task_init_frame(task);
 
 	// This can vary per task if we want to introduce priorities.
 	task->task_time_budget = RUN_TIME_BUDGET;
@@ -171,8 +174,8 @@ struct task *task_alloc(pid_t ppid)
 	task->task_start_time = 0;
 	task->task_preempted = 0;
 
-	list_init(&task->task_mmap);
 	rb_init(&task->task_rb);
+	list_init(&task->task_mmap);
 	list_init(&task->task_node);
 	list_init(&task->task_children);
 	list_init(&task->task_child);
@@ -201,7 +204,7 @@ struct task *task_alloc(pid_t ppid)
  *
  * Finally, this function maps one page for the program's initial stack.
  */
-static void task_load_elf(struct task *task, uint8_t *binary)
+void task_load_elf(struct task *task, uint8_t *binary)
 {
 	/* Hints:
 	 * - Load each program segment into virtual memory at the address

@@ -10,6 +10,7 @@
 #include <kernel/sched.h>
 
 #include <kernel/vma/syscall.h>
+#include <include/kernel/vma.h>
 
 extern void syscall64(void);
 
@@ -67,6 +68,25 @@ static int sys_kill(pid_t pid)
 	return 0;
 }
 
+//path is for when we have a fs
+static int sys_exec(char *path) {
+	if(path == NULL) {
+		return -1;
+	}
+
+	remove_vma_range(cur_task, (void*)0x0, USER_LIM);
+
+	list_init(&cur_task->task_mmap);
+	list_init(&cur_task->task_node);
+	rb_init(&cur_task->task_rb);
+
+	task_init_frame(cur_task);
+	task_load_elf(cur_task, (uint8_t*)path);
+
+	task_run(cur_task);
+	return -1;
+}
+
 /* Dispatches to the correct kernel function, passing the arguments. */
 int64_t syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3,
         uint64_t a4, uint64_t a5, uint64_t a6)
@@ -108,6 +128,10 @@ int64_t syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3,
 			return sys_wait((int *)a1);
 		case SYS_waitpid:
 			return sys_waitpid(a1, (int *)a2, a3);
+// #ifdef BONUS_LAB5
+		case SYS_exec:
+			return sys_exec((char *)a1);
+// #endif
 	default:
 		return -ENOSYS;
 	}
