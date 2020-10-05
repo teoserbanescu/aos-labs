@@ -73,8 +73,9 @@ struct task {
 	struct list task_node;
 
 	/* Indicates if a task was preempted by an interrupt */
-	char task_preempted;
-	uint64_t task_time_budget;
-	uint64_t task_time_left;
+	uint64_t task_runtime;
 	uint64_t task_start_time;
 };
+
+int insert_task(struct task *task);
+struct task* get_task();
