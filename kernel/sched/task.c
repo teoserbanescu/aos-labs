@@ -358,6 +358,8 @@ static void task_zombie(struct task *task) {
 	}
 	else {
 		task->task_status = TASK_DYING;
+		// remove from the run queue
+		list_remove(&task->task_node);
 		list_push(&parent->task_zombies, &task->task_node);
 	}
 }
