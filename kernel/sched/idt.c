@@ -658,6 +658,8 @@ void int_dispatch(struct int_frame *frame)
 		case INT_BREAK:
 			while(1) monitor(NULL);
 		case IRQ_TIMER:
+			cprintf("timer at %u\n", read_tsc());
+			cur_task->task_preempted = 1;
 			lapic_eoi();
 			sched_yield();
 	default: break;

@@ -9,6 +9,8 @@
 #include <kernel/sched.h>
 #include <kernel/vma.h>
 
+#define RUN_TIME_BUDGET 1000000000
+
 pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
 size_t nuser_tasks = 0;
@@ -163,6 +165,12 @@ struct task *task_alloc(pid_t ppid)
 
 	task->task_frame.rflags = FLAGS_IF;
 
+	// This can vary per task if we want to introduce priorities.
+	task->task_time_budget = RUN_TIME_BUDGET;
+	task->task_time_left = RUN_TIME_BUDGET;
+	task->task_start_time = 0;
+	task->task_preempted = 0;
+
 	list_init(&task->task_mmap);
 	rb_init(&task->task_rb);
 	list_init(&task->task_node);
@@ -291,7 +299,7 @@ static void task_make_orphans(struct task *task) {
 	if (!list_is_empty(&task->task_zombies)) {
 		list_foreach_safe(&task->task_zombies, node, next) {
 			zombie = container_of(node, struct task, task_node);
-			
+
 			// Found a zombie child, destroy it.
 			cprintf("[PID %5u] Reaping task with PID %u\n", cur_task ? cur_task->task_pid : 0,
 					zombie->task_pid);
@@ -439,6 +447,8 @@ void task_run(struct task *task)
 
 	/* LAB 3: Your code here. */
 //	panic("task_run() not yet implemented");
+
+	cprintf("Running task with PID %u\n", cur_task ? cur_task->task_pid : 0);
 
 	if (!cur_task) {
 		cur_task = task;
