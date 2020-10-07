@@ -86,5 +86,4 @@ struct task* get_task();
 	/* Per-task lock */
 	struct spinlock task_lock;
 #endif
-};
 
