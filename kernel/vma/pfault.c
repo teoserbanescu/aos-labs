@@ -22,7 +22,7 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 	page = page_lookup(task->task_pml4, va, &entry);
 
 // #ifdef BONUS_LAB5 page deduplication
-	if(!page && !vma->vm_src && (flags & PF_PRESENT)) {
+	if(!page && !vma->vm_src && (flags & PAGE_PRESENT)) {
 		if (!page_zero) {
 			page_zero = page_alloc(ALLOC_ZERO);
 		}
@@ -36,6 +36,7 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 	if(entry && page &&
 			!(*entry & PAGE_WRITE) &&
 			(vma->vm_flags & VM_WRITE)) {
+		cprintf("[PID %5u] %s %p cow! %s\n", task->task_pid, __PRETTY_FUNCTION__, va, vma->vm_name);
 		*entry |= PAGE_WRITE;
 		page_copy = page_alloc(BUDDY_4K_PAGE);
 		page_copy->pp_ref++;

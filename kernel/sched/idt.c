@@ -733,7 +733,7 @@ void page_fault_handler(struct int_frame *frame)
 	 * page fault has happened in user mode.
 	 */
 
-	ret = task_page_fault_handler(cur_task, fault_va, frame->rflags);
+	ret = task_page_fault_handler(cur_task, fault_va, frame->err_code);
 	if (ret == 0) {
 		task_run(cur_task);
 	}

@@ -140,7 +140,8 @@ KERNEL_BINFILES += \
 	user/waitnone \
 	user/waitself \
 	user/yield \
-	user/exechello
+	user/exechello \
+	user/zerodedup
 
 # Only build files if they exist.
 KERNEL_SRCFILES := $(wildcard $(KERNEL_SRCFILES))
