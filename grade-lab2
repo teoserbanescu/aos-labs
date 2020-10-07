@@ -25,10 +25,10 @@ def test_wx():
 def test_4k_paging():
     r.match(r'\[LAB 2\] check_4k_paging\(\) succeeded!')
 
-## Huge page bonus
-#@test(10, '2M paging', parent=test_jos)
-#def test_2m_paging():
-#    r.match(r'\[LAB 2\] check_2m_paging\(\) succeeded!')
+# Huge page bonus
+@test(10, '2M paging', parent=test_jos)
+def test_2m_paging():
+   r.match(r'\[LAB 2\] check_2m_paging\(\) succeeded!')
 
 #@test(10, 'Transparent 2M paging', parent=test_jos)
 #def test_transparent_2m_paging():

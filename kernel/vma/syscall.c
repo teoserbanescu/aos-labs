@@ -93,23 +93,110 @@ void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd,
 	uintptr_t offset)
 {
 	/* LAB 4: your code here. */
-	return NULL;
+	struct vma *vma;
+	int ret;
+    uint64_t vm_flags;
+
+    /* Do not map addresses in the kernel space. */
+    if (addr >= (void *)USER_LIM) {
+        return MAP_FAILED;
+    }
+
+    // The only mappings currently supported are MAP ANONYMOUS | MAP PRIVATE.
+    if ((flags & (MAP_ANONYMOUS | MAP_PRIVATE)) != (MAP_ANONYMOUS | MAP_PRIVATE)) {
+        return MAP_FAILED;
+    }
+
+    // Some configurations of the protection flags are not supported on x86-64.
+    if ((prot == PROT_WRITE) ||
+        (prot == PROT_EXEC) ||
+        ((prot & (PROT_WRITE | PROT_EXEC)) == (PROT_WRITE | PROT_EXEC))) {
+        return MAP_FAILED;
+    }
+
+    if (flags & MAP_FIXED) {
+        // If the user passes MAP FIXED, remove any previous mappings.
+        // The only safe use for MAP_FIXED is where the address range specified
+        // by addr and length was previously reserved using another mapping.
+        if (addr == NULL) {
+            return MAP_FAILED;
+        }
+        sys_munmap(addr, len);
+    }
+
+    vm_flags = 0;
+    vm_flags |= (prot & PROT_READ) ? VM_READ : 0;
+    vm_flags |= (prot & PROT_WRITE) ? VM_WRITE : 0;
+    vm_flags |= (prot & PROT_EXEC) ? VM_EXEC : 0;
+
+    vma = add_vma(cur_task, "user", addr, len, vm_flags);
+
+    if (vma != NULL) {
+        if (flags & MAP_POPULATE) {
+            ret = populate_vma_range(cur_task, ROUNDDOWN(addr, PAGE_SIZE), vma->vm_end - ROUNDDOWN(addr, PAGE_SIZE), vm_flags);
+            if (ret < 0) {
+                return MAP_FAILED;
+            }
+        }
+
+        return ROUNDDOWN(vma->vm_base, PAGE_SIZE);
+    }
+
+	return MAP_FAILED;
 }
 
 void sys_munmap(void *addr, size_t len)
 {
 	/* LAB 4: your code here. */
+
+	/* Do not modify the kernel space. */
+    if (addr + len >= (void *)USER_LIM) {
+        return;
+    }
+
+    remove_vma_range(cur_task, addr, len);
 }
 
 int sys_mprotect(void *addr, size_t len, int prot)
 {
 	/* LAB 4 (bonus): your code here. */
-	return -ENOSYS;
+
+	/* Do not modify the kernel space. */
+    if (addr + len >= (void *)USER_LIM) {
+        return -1;
+    }
+
+	return protect_vma_range(cur_task, addr, len, prot);
 }
 
 int sys_madvise(void *addr, size_t len, int advise)
 {
 	/* LAB 4 (bonus): your code here. */
-	return -ENOSYS;
+    struct vma *vma;
+
+    /* Do not modify the kernel space. */
+    if (addr + len >= (void *)USER_LIM) {
+        return -1;
+    }
+
+    if (addr == NULL) {
+        return -1;
+    }
+
+    if (advise & MADV_WILLNEED) {
+        vma = find_vma(NULL, NULL, &cur_task->task_rb, addr);
+
+        if (vma->vm_end < addr + len) {
+            return -1;
+        }
+
+        return populate_vma_range(cur_task, addr, len, vma->vm_flags);
+    }
+
+    if (advise & MADV_DONTNEED) {
+        return unmap_vma_range(cur_task, addr, len);
+    }
+
+    return -1;
 }
 

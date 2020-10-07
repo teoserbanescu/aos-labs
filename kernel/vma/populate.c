@@ -13,6 +13,29 @@ int do_populate_vma(struct task *task, void *base, size_t size,
 	struct vma *vma, void *udata)
 {
 	/* LAB 4: your code here. */
+    uint64_t flags;
+
+    flags = PAGE_USER | PAGE_PRESENT;
+    flags |= (vma->vm_flags & VM_WRITE) ? PAGE_WRITE : 0;
+    flags |= !(vma->vm_flags & VM_EXEC) ? PAGE_NO_EXEC : 0;
+
+    populate_region(task->task_pml4, base, size, flags);
+    if (vma->vm_src) {
+    	uint64_t page_offset = base - ROUNDDOWN(vma->vm_base, PAGE_SIZE);
+    	uint64_t inpage_offset = vma->vm_base - ROUNDDOWN(vma->vm_base, PAGE_SIZE);
+    	if (base == ROUNDDOWN(vma->vm_base, PAGE_SIZE)) {
+			memcpy(vma->vm_base, vma->vm_src, size - inpage_offset);
+			vma->vm_base = ROUNDDOWN(vma->vm_base, PAGE_SIZE);
+			vma->vm_src -= inpage_offset;
+			vma->vm_len += inpage_offset;
+		}
+		else {
+			memcpy(base, vma->vm_src + page_offset,
+				   MIN(size, vma->vm_len - page_offset));
+		}
+    }
+
+    protect_region(task->task_pml4, base, size, flags);
 	return 0;
 }
 

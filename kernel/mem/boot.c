@@ -38,7 +38,20 @@ void *boot_alloc(uint32_t n)
 	 *
 	 * LAB 1: your code here.
 	 */
-	return NULL;
+
+    if(n == 0){
+        return next_free;
+    }
+
+    result = next_free;
+    next_free += ROUNDUP(n, PAGE_SIZE);
+
+	// Overflow means we are out of memory.
+	if (next_free < result) {
+		panic("[boot_alloc] Ran out of memory.");
+	}
+
+    return result;
 }
 
 /* The addresses and lengths in the memory map provided by the boot loader may

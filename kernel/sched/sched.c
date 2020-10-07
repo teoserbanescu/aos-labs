@@ -36,12 +36,33 @@ void sched_init_mp(void)
 void sched_yield(void)
 {
 	/* LAB 5: your code here. */
+	struct list *node;
+	struct task *task;
+
+	if (cur_task) {
+		cur_task->task_runtime = read_tsc() - cur_task->task_start_time;
+		insert_task(cur_task);
+	}
+
+	if (!list_is_empty(&runq)) {
+		task = get_task();
+		task->task_start_time = read_tsc();
+		task_run(task);
+	}
+
+	if (list_is_empty(&runq)) {
+		sched_halt();
+	}
+
+	panic("yield returned");
 }
 
 /* For now jump into the kernel monitor. */
 void sched_halt()
 {
-	while (1) {
+    cprintf("Destroyed the only task - nothing more to do!\n");
+
+    while (1) {
 		monitor(NULL);
 	}
 }

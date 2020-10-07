@@ -15,6 +15,16 @@ static int populate_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct populate_info *info = walker->udata;
 
 	/* LAB 3: your code here. */
+	if (*entry & PAGE_PRESENT) {
+		return 0;
+	}
+	else {
+		page = page_alloc(ALLOC_ZERO);
+		if (!page)
+			panic("ptbl_alloc page alloc no mem\n");
+		page->pp_ref++;
+		*entry = PAGE_ADDR(page2pa(page)) | info->flags;
+	}
 	return 0;
 }
 
@@ -25,6 +35,12 @@ static int populate_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct populate_info *info = walker->udata;
 
 	/* LAB 3: your code here. */
+
+	/* Similar to ptbl_alloc, but flags are given here
+	 * and udata is a different structure
+	 */
+	ptbl_alloc(entry, base, end, walker);
+
 	return 0;
 }
 
@@ -43,6 +59,8 @@ void populate_region(struct page_table *pml4, void *va, size_t size,
 	struct page_walker walker = {
 		.get_pte = populate_pte,
 		.get_pde = populate_pde,
+		.get_pdpte = ptbl_alloc,
+		.get_pml4e = ptbl_alloc,
 		.udata = &info,
 	};
 

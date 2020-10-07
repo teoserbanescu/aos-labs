@@ -18,9 +18,19 @@ static int insert_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	struct insert_info *info = walker->udata;
-	struct page_info *page;
+	struct page_info *page = info->page;
 
 	/* LAB 2: your code here. */
+	if (*entry & PAGE_PRESENT) {
+        // PTE already points to a present page
+	    page_decref(pa2page(PAGE_ADDR(*entry)));
+        tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
+		*entry = 0;	// BONUS_LAB3 Foreshadow
+	}
+
+    // Page is not present, insert it.
+	page->pp_ref++;
+	*entry = PAGE_ADDR(page2pa(page)) | info->flags;
 
 	return 0;
 }
@@ -36,11 +46,30 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
 	struct insert_info *info = walker->udata;
-	struct page_info *page;
+	struct page_info *page = info->page;
 
 	/* LAB 2: your code here. */
+    if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE)) {
+        // PTE already points to a present page
+        page_decref(pa2page(PAGE_ADDR(*entry)));
+        tlb_invalidate(info->pml4, KADDR(PAGE_ADDR(*entry)));
+		*entry = 0;	// BONUS_LAB3 Foreshadow
+	}
 
-	return 0;
+    // Page is not present, insert it.
+    if (page->pp_order == BUDDY_4K_PAGE) {
+        // The new page is a 4K page, alloc a new page table.
+        ptbl_alloc(entry, base, end, walker);
+        return 0;
+    }
+    else {
+        // The new page is a 2M page.
+        page->pp_ref++;
+        *entry = PAGE_ADDR(page2pa(page)) | info->flags | PAGE_HUGE;
+        return 0;
+    }
+
+	return -1;
 }
 
 
@@ -71,15 +100,23 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 int page_insert(struct page_table *pml4, struct page_info *page, void *va,
     uint64_t flags)
 {
-	/* LAB 2: your code here. */
-	struct insert_info info;
-	struct page_walker walker = {
+    /* LAB 2: your c/ode here. */
+    struct insert_info info = {
+            .page = page,
+            .pml4 = pml4,
+            .flags = flags | PAGE_PRESENT,   /* PAGE_PRESENT should always be set */
+    };
+    struct page_walker walker = {
 		.get_pte = insert_pte,
 		.get_pde = insert_pde,
+		.get_pdpte = ptbl_alloc,
+		.get_pml4e = ptbl_alloc,
 		.udata = &info,
 	};
 
-	return walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE),
-		&walker);
+    if (page->pp_order == BUDDY_2M_PAGE && !hpage_aligned((uintptr_t)va))
+        return -1;
+
+    return walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE), &walker);
 }
 

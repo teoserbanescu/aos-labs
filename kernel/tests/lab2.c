@@ -460,10 +460,10 @@ void lab2_check_pml4(void)
 void lab2_check_paging(void)
 {
 	lab2_check_4k_paging();
-        /** BONUS
+//        /** BONUS
 	lab2_check_2m_paging();
-	lab2_check_transparent_2m_paging();
-        **/
+//	lab2_check_transparent_2m_paging();
+//        **/
 }
 
 void lab2_check_buddy(struct boot_info *boot_info)

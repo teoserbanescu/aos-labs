@@ -11,6 +11,9 @@
 #include <kernel/mem.h>
 #include <kernel/sched.h>
 
+#include <kernel/vma/syscall.h>
+#include <include/kernel/vma.h>
+
 extern void syscall64(void);
 
 void syscall_init(void)
@@ -33,6 +36,7 @@ static void sys_cputs(const char *s, size_t len)
 	/* Check that the user has permission to read memory [s, s+len).
 	 * Destroy the environment if not. */
 	/* LAB 3: your code here. */
+	assert_user_mem(cur_task, (void*) s, len, PAGE_PRESENT | PAGE_USER);
 
 	/* Print the string supplied by the user. */
 	cprintf("%.*s", len, s);
@@ -65,10 +69,29 @@ static int sys_kill(pid_t pid)
 		return -1;
 	}
 
-	cprintf("[PID %5u] Exiting gracefully\n");
+	cprintf("[PID %5u] Exiting gracefully\n", task->task_pid);
 	task_destroy(task);
 
 	return 0;
+}
+
+//path is for when we have a fs
+static int sys_exec(char *path) {
+	if(path == NULL) {
+		return -1;
+	}
+
+	remove_vma_range(cur_task, (void*)0x0, USER_LIM);
+
+	list_init(&cur_task->task_mmap);
+	list_init(&cur_task->task_node);
+	rb_init(&cur_task->task_rb);
+
+	task_init_frame(cur_task);
+	task_load_elf(cur_task, (uint8_t*)path);
+
+	task_run(cur_task);
+	return -1;
 }
 
 /* Dispatches to the correct kernel function, passing the arguments. */
@@ -80,9 +103,42 @@ int64_t syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3,
 	 * Return any appropriate return value.
 	 */
 	/* LAB 3: your code here. */
-	panic("syscall not implemented");
+//	panic("syscall not implemented");
 
 	switch (syscallno) {
+		case SYS_cputs:
+			sys_cputs((char *)a1, a2);
+			return 0;
+		case SYS_cgetc:
+			return sys_cgetc();
+		case SYS_getpid:
+			return sys_getpid();
+		case SYS_kill:
+			return sys_kill(a1);
+	    case SYS_mquery:
+            return sys_mquery((struct vma_info*)a1, (void *)a2);
+	    case SYS_mmap:
+	        return (uintptr_t)sys_mmap((void *)a1, a2, a3, a4, a5, a6);
+	    case SYS_munmap:
+	        sys_munmap((void *)a1, a2);
+	        return 0;
+	    case SYS_mprotect:
+	        return sys_mprotect((void *)a1, a2, a3);
+	    case SYS_madvise:
+	        return sys_madvise((void *)a1, a2, a3);
+	    case SYS_yield:
+	        sched_yield();
+	        return 0;
+	    case SYS_fork:
+	        return sys_fork();
+		case SYS_wait:
+			return sys_wait((int *)a1);
+		case SYS_waitpid:
+			return sys_waitpid(a1, (int *)a2, a3);
+// #ifdef BONUS_LAB5
+		case SYS_exec:
+			return sys_exec((char *)a1);
+// #endif
 	default:
 		return -ENOSYS;
 	}

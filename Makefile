@@ -135,6 +135,7 @@ include lib/Makefile
 
 CPUS ?= 1
 
+QEMUEXTRA = -m 128M
 QEMUOPTS = -drive format=raw,file=$(OBJDIR)/kernel/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)
 QEMUOPTS += $(shell if $(QEMU) -nographic -help | grep -q '^-D '; then echo '-D qemu.log'; fi)
 QEMUOPTS += -no-reboot -D /dev/stdout

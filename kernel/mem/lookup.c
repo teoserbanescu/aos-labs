@@ -16,17 +16,26 @@ static int lookup_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct lookup_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
-	return 0;
+	if (*entry & PAGE_PRESENT) {
+        info->entry = entry;
+        return 0;
+    }
+
+	return -1;
 }
 
 /* If the PDE points to a present huge page, store the pointer to the PDE into
  * the info struct of the walker. */
 static int lookup_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
-    struct page_walker *walker)
-{
+	struct page_walker *walker) {
 	struct lookup_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
+	if ((*entry & PAGE_PRESENT) && (*entry & PAGE_HUGE)) {
+		info->entry = entry;
+		return 0;
+	}
+
 	return 0;
 }
 
@@ -53,10 +62,15 @@ struct page_info *page_lookup(struct page_table *pml4, void *va,
 		.udata = &info,
 	};
 
-	if (walk_page_range(pml4, va, (void *)((uintptr_t)va + PAGE_SIZE),
-		&walker) < 0)
+	if (walk_page_range(pml4, va, va+1, &walker) < 0 ||
+	    !info.entry)
 		return NULL;
 
-	return NULL;
+	if (entry_store) {
+            // store the address of the PTE for this page into entry_store
+        *entry_store = info.entry;
+
+    }
+    return pa2page(PAGE_ADDR(*info.entry));
 }
 

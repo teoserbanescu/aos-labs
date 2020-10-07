@@ -30,19 +30,61 @@ int pml4_setup(struct boot_info *boot_info)
 	/* Map in the regions used by the kernel from the ELF header passed to
 	 * us through the boot info struct.
 	 */
+	boot_map_kernel(kernel_pml4, KADDR((uintptr_t)boot_info->elf_hdr));
 
 	/* Use the physical memory that 'bootstack' refers to as the kernel
 	 * stack. The kernel stack grows down from virtual address KSTACK_TOP.
 	 * Map 'bootstack' to [KSTACK_TOP - KSTACK_SIZE, KSTACK_TOP).
 	 */
+    boot_map_region(kernel_pml4, (void *)(KSTACK_TOP-KSTACK_SIZE), KSTACK_SIZE, (physaddr_t)bootstack , PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 
 	/* Map in the pages from the buddy allocator as RW-. */
+    boot_map_region(kernel_pml4, (void *)KPAGES, npages * (sizeof *pages),  PADDR(pages), PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 
-	/* Migrate the struct page_info structs to the newly mapped area using
-	 * buddy_migrate().
-	 */
+    /* Migrate the struct page_info structs to the newly mapped area using
+     * buddy_migrate().
+     */
+	buddy_migrate();
 
 	return 0;
+}
+
+// BONUS_LAB3 help! shouldn't this work to set SMEP/SMAP?
+// Doing it like this does not generate a fault
+
+/* Intel manual SMAP: supervisor-mode access prevention.
+ * If CPUID.(EAX=07H,ECX=0H):EBX.SMAP [bit 20] = 1, CR4.SMAP may be set to 1, enabling supervisor-mode
+ * access prevention (see Section 4.6).
+ * */
+void supervisor_memory_protection_init(void) {
+#define CPUID_SMEP 7
+#define CPUID_SMAP 20
+
+	uint32_t eax, ebx, ecx, edx;
+	uintptr_t cr4, cr4_old;
+
+	eax = 7;
+	ecx = 0;
+
+	cpuid(0, &eax, &ebx, &ecx, &edx);
+
+	cr4 = read_cr4();
+	cr4_old = cr4;
+
+	if (ebx & CPUID_SMEP) {
+		cr4 |= CR4_SMEP;
+	}
+
+	if (ebx & CPUID_SMAP) {
+		cr4 |= CR4_SMAP;
+	}
+
+	if (cr4 == cr4_old) {
+		cprintf("SMEP/SMAP not available\n");
+	}
+	else {
+		write_cr4(cr4);
+	}
 }
 
 /*
@@ -87,7 +129,6 @@ void mem_init(struct boot_info *boot_info)
 	npages = MIN(BOOT_MAP_LIM, highest_addr) / PAGE_SIZE;
 
 	/* Remove this line when you're ready to test this function. */
-	panic("mem_init: This function is not finished\n");
 
 	/*
 	 * Allocate an array of npages 'struct page_info's and store it in 'pages'.
@@ -111,20 +152,24 @@ void mem_init(struct boot_info *boot_info)
 	pml4_setup(boot_info);
 
 	/* Enable the NX-bit. */
+    write_msr(MSR_EFER, MSR_EFER_NXE);
 
 	/* Check the kernel PML4. */
-	lab2_check_pml4();
+//	lab2_check_pml4();
 
 	/* Load the kernel PML4. */
+    load_pml4((struct page_table *)PADDR(kernel_pml4));
 
 	/* Check the paging functions. */
-	lab2_check_paging();
+//	lab2_check_paging();
 
 	/* Add the rest of the physical memory to the buddy allocator. */
 	page_init_ext(boot_info);
 
 	/* Check the buddy allocator. */
-	lab2_check_buddy(boot_info);
+//	lab2_check_buddy(boot_info);
+
+//	supervisor_memory_protection_init();
 }
 
 void mem_init_mp(void)
@@ -156,6 +201,11 @@ void page_init(struct boot_info *boot_info)
 	 */
 	for (i = 0; i < npages; ++i) {
 		/* LAB 1: your code here. */
+		page = pages + i;
+		page->pp_ref = 0;
+		page->pp_free = 0;
+		page->pp_order = 0;
+		list_init(&page->pp_node);
 	}
 
 	entry = (struct mmap_entry *)KADDR(boot_info->mmap_addr);
@@ -175,7 +225,27 @@ void page_init(struct boot_info *boot_info)
 	 */
 	for (i = 0; i < boot_info->mmap_len; ++i, ++entry) {
 		/* LAB 1: your code here. */
+		for (pa = entry->addr; pa < entry->addr + entry->len; pa += PAGE_SIZE) {
+
+			if (pa >= BOOT_MAP_LIM)
+				continue;
+
+			page = pa2page(pa);
+
+			if ((pa == 0 ||
+				 pa == PAGE_ADDR(PADDR(boot_info)) ||
+				 pa == (uintptr_t)boot_info->elf_hdr ||
+				 (KERNEL_LMA <= pa && pa < end) ||
+				 entry->type != MMAP_FREE)) {
+				continue;
+			}
+
+			page_free(page);
+		}
 	}
+#ifdef DEBUG
+	show_buddy_info();
+#endif
 }
 
 /* Extend the buddy allocator by initializing the page structure and memory
@@ -199,6 +269,25 @@ void page_init_ext(struct boot_info *boot_info)
 	 */
 	for (i = 0; i < boot_info->mmap_len; ++i, ++entry) {
 		/* LAB 2: your code here. */
+        for (pa = entry->addr; pa < entry->addr + entry->len; pa += PAGE_SIZE) {
+
+            if (pa < BOOT_MAP_LIM)
+                continue;
+
+            if(npages <= PAGE_INDEX(pa)){
+                buddy_map_chunk(kernel_pml4, PAGE_INDEX(pa));
+                boot_map_region(kernel_pml4, page2kva(pa2page(pa)), HPAGE_SIZE, pa, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+            }
+
+            page = pa2page(pa);
+
+            if ((KERNEL_LMA <= pa && pa < end) ||
+                    (entry->type != MMAP_FREE)) {
+                continue;
+            }
+
+            page_free(page);
+        }
 	}
 }
 

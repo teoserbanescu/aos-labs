@@ -20,6 +20,13 @@ void remove_vma(struct task *task, struct vma *vma)
 void free_vmas(struct task *task)
 {
 	/* LAB 4: your code here. */
+    struct vma *vma;
+    struct list *node, *prev;
+
+	list_foreach_safe(&task->task_mmap, node, prev) {
+	    vma = container_of(node, struct vma, vm_mmap);
+	    do_remove_vma(task, vma->vm_base, vma->vm_end - vma->vm_base, vma, NULL);
+	}
 }
 
 /* Splits the VMA into the address range [base, base + size) and removes the
@@ -29,6 +36,15 @@ int do_remove_vma(struct task *task, void *base, size_t size, struct vma *vma,
 	void *udata)
 {
 	/* LAB 4: your code here. */
+	struct vma *vma_to_remove;
+
+	vma_to_remove = split_vmas(task, vma, base, size);
+
+	unmap_page_range(task->task_pml4, base, size);
+
+	remove_vma(task, vma_to_remove);
+	kfree(vma_to_remove);
+
 	return 0;
 }
 
@@ -47,6 +63,14 @@ int do_unmap_vma(struct task *task, void *base, size_t size, struct vma *vma,
 	void *udata)
 {
 	/* LAB 4: your code here. */
+	physaddr_t *entry;
+
+	page_lookup(task->task_pml4, base, &entry);
+
+	if (!(*entry & PAGE_DIRTY)) {
+	    unmap_page_range(task->task_pml4, base, size);
+	}
+
 	return 0;
 }
 

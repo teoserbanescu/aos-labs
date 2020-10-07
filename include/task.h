@@ -10,6 +10,10 @@
 
 typedef int32_t pid_t;
 
+int task_setup_pid();
+
+struct task *task_alloc(pid_t ppid);
+
 /* Values of task_status in struct task. */
 enum {
 	TASK_DYING = 0,
@@ -68,6 +72,15 @@ struct task {
 
 	/* The anchor node (for zombies or the run queue) */
 	struct list task_node;
+
+	uint64_t task_runtime;
+	uint64_t task_start_time;
+};
+
+void task_init_frame(struct task *task);
+
+int insert_task(struct task *task);
+struct task* get_task();
 
 #ifndef USE_BIG_KERNEL_LOCK
 	/* Per-task lock */
