@@ -7,6 +7,7 @@
 
 #include <kernel/mem.h>
 #include <kernel/tests.h>
+#include <include/cpu.h>
 
 extern struct list page_free_list[];
 
@@ -178,6 +179,12 @@ void mem_init_mp(void)
 	 * page.
 	 */
 	/* LAB 6: your code here. */
+	size_t i;
+
+	for (i = 0; i < ncpus; ++i) {
+//		boot_map_region(kernel_pml4, (void *)(KSTACK_TOP-KSTACK_SIZE), KSTACK_SIZE, (physaddr_t)bootstack , PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+		populate_region(kernel_pml4, (void *)(KSTACK_TOP - i * (KSTACK_SIZE + PAGE_SIZE)), KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+	}
 }
 
 /*
