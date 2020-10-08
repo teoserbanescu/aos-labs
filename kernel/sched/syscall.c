@@ -135,10 +135,10 @@ int64_t syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3,
 			return sys_wait((int *)a1);
 		case SYS_waitpid:
 			return sys_waitpid(a1, (int *)a2, a3);
-// #ifdef BONUS_LAB5
+ #ifdef BONUS_LAB5
 		case SYS_exec:
 			return sys_exec((char *)a1);
-// #endif
+ #endif
 	default:
 		return -ENOSYS;
 	}

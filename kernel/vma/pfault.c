@@ -21,7 +21,7 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 
 	page = page_lookup(task->task_pml4, va, &entry);
 
-// #ifdef BONUS_LAB5 page deduplication
+ #ifdef BONUS_LAB5 //page deduplication
 	if(!page && !vma->vm_src && (flags & PF_PRESENT)) {
 		if (!page_zero) {
 			page_zero = page_alloc(ALLOC_ZERO);
@@ -30,7 +30,7 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 		page_insert(task->task_pml4, page_zero, va, PAGE_PRESENT | PAGE_USER);
 		return 0;
 	}
-// #endif
+ #endif
 
 /* COW */
 	if(entry && page &&

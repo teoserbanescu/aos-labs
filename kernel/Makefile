@@ -139,8 +139,8 @@ KERNEL_BINFILES += \
 	user/wait \
 	user/waitnone \
 	user/waitself \
-	user/yield \
-	user/exechello
+	user/yield
+#	user/exechello
 
 # LAB 6 code
 KERNEL_SRCFILES += \
