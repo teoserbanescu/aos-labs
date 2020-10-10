@@ -28,7 +28,7 @@ int kmem_init_mp(void)
 
 	// FIXME
 	cprintf("kmem_init_mp on CPU %u\n", this_cpu->cpu_id);
-	kmem_init_mp();
+//	kmem_init_mp();
 
 	return 0;
 }

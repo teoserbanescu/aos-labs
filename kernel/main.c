@@ -48,7 +48,6 @@ void kmain(struct boot_info *boot_info)
 
 	/* Set up the slab allocator. */
 	kmem_init();
-
 	/* Set up the interrupt controller and timers */
 	pic_init();
 	rsdp = rsdp_find();
@@ -73,8 +72,9 @@ void kmain(struct boot_info *boot_info)
 	lab3_check_kmem();
 
 	/* Drop into the kernel monitor. */
-	while (1)
+	while (1) {
 		monitor(NULL);
+	}
 #endif
 }
 
