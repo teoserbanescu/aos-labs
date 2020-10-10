@@ -14,7 +14,6 @@ pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
 size_t nuser_tasks = 0;
 
-//FIXME looks like tasks is an array now
 extern struct list runq;
 
 int insert_task(struct task *task) {
