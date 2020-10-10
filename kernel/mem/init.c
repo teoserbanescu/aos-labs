@@ -181,6 +181,7 @@ void mem_init_mp(void)
 	/* LAB 6: your code here. */
 	size_t i;
 
+	cprintf("mem_init_mp ncpus %d\n", ncpus);
 	for (i = 1; i < ncpus; ++i) {
 		// FIXME different kernel stack pointer per CPU: set in gdt_init_mp or here?
 		cpus[i].cpu_tss.rsp[0] = KSTACK_TOP - i * (KSTACK_SIZE + KSTACK_GAP);

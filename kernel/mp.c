@@ -22,7 +22,7 @@ void boot_cpus(void)
 	void *code;
 	struct cpuinfo *cpu;
 
-	cprintf("Boot CPUs...\n");
+	cprintf("Boot %d CPUs...\n", ncpus);
 
 	/* Write entry code at the reserved page at MPENTRY_PADDR. */
 	code = KADDR(MPENTRY_PADDR);
@@ -33,6 +33,7 @@ void boot_cpus(void)
 		cprintf("Boot CPU no. %u\n", cpu->cpu_id);
 		/* Skip the boot CPU */
 		if (cpu == boot_cpu) {
+			cprintf("CPU no. %d is boot CPU\n", cpu->cpu_id);
 			continue;
 		}
 
@@ -40,7 +41,9 @@ void boot_cpus(void)
 		mpentry_kstack = (void *)cpu->cpu_tss.rsp[0];
 
 		/* Start the CPU at boot_ap16(). */
+		cprintf("CPU no. %u lapic_startup\n", cpu->cpu_id);
 		lapic_startup(cpu->cpu_id, PADDR(code));
+		cprintf("CPU no. %u lapic_startup finished\n", cpu->cpu_id);
 
 		/* Wait until the CPU becomes ready. */
 		while (cpu->cpu_status != CPU_STARTED);

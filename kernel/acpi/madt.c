@@ -13,6 +13,7 @@ void madt_parse_lapic(struct madt_lapic *lapic)
 	if (lapic->apic_id < NCPUS) {
 		cpus[lapic->apic_id].cpu_id = lapic->cpu_id;
 		++ncpus;
+		cprintf("ncpus %d\n", ncpus);
 		return;
 	}
 
