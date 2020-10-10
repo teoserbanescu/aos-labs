@@ -639,6 +639,12 @@ void idt_init(void)
 	load_idt(&idtr);
 }
 
+/* Set up the interrupt handlers per CPU. */
+void idt_init_mp(void) {
+	// FIXME should we have separate IDT per CPU?
+	idt_init();
+}
+
 void int_dispatch(struct int_frame *frame)
 {
 	/* Handle processor exceptions:
@@ -724,7 +730,8 @@ void page_fault_handler(struct int_frame *frame)
         cprintf("[PID %5u] user fault va %p ip %p\n",
                 cur_task->task_pid, fault_va, frame->rip);
         print_int_frame(frame);
-        panic("Kernel-mode page fault");
+        // FIXME what if a kernel page has not been mapped yet?
+//        panic("Kernel-mode page fault");
     }
 
 

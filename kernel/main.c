@@ -13,6 +13,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef USE_BIG_KERNEL_LOCK
+extern struct spinlock kernel_lock;
+#endif
+
 void kmain(struct boot_info *boot_info)
 {
 	extern char edata[], end[];
@@ -28,6 +32,11 @@ void kmain(struct boot_info *boot_info)
 	 * Can't call cprintf until after we do this! */
 	cons_init();
 	cprintf("\n");
+
+#ifdef USE_BIG_KERNEL_LOCK
+	spin_init(&kernel_lock, "kernel_lock");
+	spin_lock(&kernel_lock);
+#endif
 
 	/* Set up segmentation, interrupts and system calls. */
 	gdt_init();
@@ -47,9 +56,15 @@ void kmain(struct boot_info *boot_info)
 	lapic_init();
 	hpet_init(rsdp);
 
+	/* Setup the other cores */
+	mem_init_mp();
+	boot_cpus();
+	cprintf("Booted CPUs\n");
+
 	/* Set up the tasks. */
 	task_init();
 	sched_init();
+
 
 #if defined(TEST)
 	TASK_CREATE(TEST, TASK_TYPE_USER);

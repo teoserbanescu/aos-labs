@@ -258,7 +258,8 @@ void task_load_elf(struct task *task, uint8_t *binary)
 
 	elf_hdr = (struct elf *)binary;
 	ph = (struct elf_proghdr *)((uint8_t *)elf_hdr + elf_hdr->e_phoff);
-	load_pml4((void *)PADDR(task->task_pml4)); // has to be here to reload address space
+	// FIXME should not load address space, we are using vmas
+//	load_pml4((void *)PADDR(task->task_pml4)); // has to be here to reload address space
 
 
 	for (i = 0; i < elf_hdr->e_phnum; ++i, ++ph) {
