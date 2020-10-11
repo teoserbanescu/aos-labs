@@ -107,7 +107,7 @@ KERNEL_CFLAGS := $(CFLAGS) -DOpenLSD_KERNEL -gdwarf-2 -mcmodel=large -fno-pie
 KERNEL_CFLAGS += -DKERNEL_LMA=0x100000
 KERNEL_CFLAGS += -DKERNEL_VMA=0xFFFF800000000000
 KERNEL_CFLAGS += -mno-sse
-KERNEL_CFLAGS += -DUSE_BIG_KERNEL_LOCK
+#KERNEL_CFLAGS += -DUSE_BIG_KERNEL_LOCK
 
 KERNEL_LDFLAGS := -Tkernel/kernel.ld -nostdlib -n -fno-pie
 KERNEL_LDFLAGS += -Wl,--defsym,KERNEL_LMA=0x100000
@@ -134,7 +134,7 @@ include kernel/Makefile
 include user/Makefile
 include lib/Makefile
 
-CPUS ?= 2
+CPUS ?= 1
 
 QEMUEXTRA = -m 128M
 QEMUOPTS = -drive format=raw,file=$(OBJDIR)/kernel/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)

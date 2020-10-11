@@ -62,6 +62,10 @@ void kmain(struct boot_info *boot_info)
 
 	spin_init(&console_lock, "console_lock");
 
+#if defined(TEST)
+	TASK_CREATE(TEST, TASK_TYPE_USER);
+#endif
+
 	/* Setup the other cores */
 	mem_init_mp();
 	boot_cpus();
