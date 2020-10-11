@@ -41,9 +41,9 @@ void boot_cpus(void)
 		mpentry_kstack = (void *)cpu->cpu_tss.rsp[0];
 
 		/* Start the CPU at boot_ap16(). */
-		cprintf("CPU no. %u lapic_startup\n", cpu->cpu_id);
+//		cprintf("CPU no. %u lapic_startup\n", cpu->cpu_id);
 		lapic_startup(cpu->cpu_id, PADDR(code));
-		cprintf("CPU no. %u lapic_startup finished\n", cpu->cpu_id);
+//		cprintf("CPU no. %u lapic_startup finished\n", cpu->cpu_id);
 
 		/* Wait until the CPU becomes ready. */
 		while (cpu->cpu_status != CPU_STARTED);
@@ -90,6 +90,15 @@ void mp_main(void)
 //	asm volatile(
 //		"cli\n"
 //		"hlt\n");
+
+/* entrypoint in kernel task stuff
+ * this lock could have been in yield but it was messy to have one
+ * in every other type of interrupt when we ge in kernel from an interrupt
+ * similar to this lock there is one in main for boot_cpu
+ */
+#ifdef USE_BIG_KERNEL_LOCK
+	spin_lock(&kernel_lock);
+#endif
 
 	sched_yield();
 }

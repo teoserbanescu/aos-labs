@@ -168,10 +168,8 @@ pid_t sys_fork(void)
 	}
 
 	list_init(&clone->task_node);
-//	list_push(&runq, &clone->task_node);
-	insert_task(clone);
-//	list_push_left(&runq, &clone->task_node);
 	list_push(&cur_task->task_children, &clone->task_child);
+	insert_task(clone);
 
 	return clone->task_pid;
 }

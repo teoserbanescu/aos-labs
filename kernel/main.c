@@ -20,6 +20,7 @@ extern struct spinlock kernel_lock;
 void kmain(struct boot_info *boot_info)
 {
 	extern char edata[], end[];
+	extern struct spinlock console_lock;
 	struct rsdp *rsdp;
 
 	/* Before doing anything else, complete the ELF loading process.
@@ -56,14 +57,9 @@ void kmain(struct boot_info *boot_info)
 
 #ifdef USE_BIG_KERNEL_LOCK
 	spin_init(&kernel_lock, "kernel_lock");
-//	spin_lock(&kernel_lock);
+	spin_lock(&kernel_lock);
 #endif
 
-#if defined(TEST)
-	TASK_CREATE(TEST, TASK_TYPE_USER);
-#endif
-
-	extern struct spinlock console_lock;
 	spin_init(&console_lock, "console_lock");
 
 	/* Setup the other cores */
@@ -72,6 +68,7 @@ void kmain(struct boot_info *boot_info)
 	cprintf("Booted CPUs\n");
 
 #if defined(TEST)
+	TASK_CREATE(TEST, TASK_TYPE_USER);
 	sched_yield();
 #else
 	lab3_check_kmem();

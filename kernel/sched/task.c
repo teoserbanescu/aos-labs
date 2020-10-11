@@ -10,6 +10,8 @@
 #include <kernel/sched.h>
 #include <kernel/vma.h>
 
+#include <spinlock.h>
+
 pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
 size_t nuser_tasks = 0;
@@ -17,7 +19,13 @@ size_t nuser_tasks = 0;
 extern struct list runq;
 
 int insert_task(struct task *task) {
+//#ifdef USE_BIG_KERNEL_LOCK
+//	spin_lock(&kernel_lock);
+//#endif
 	list_push(&runq, &task->task_node);
+//#ifdef USE_BIG_KERNEL_LOCK
+//	spin_unlock(&kernel_lock);
+//#endif
 	return 0;
 }
 
@@ -30,10 +38,14 @@ struct task* get_task() {
 	struct list *node;
 	uint64_t min_time = -1;
 
+//#ifdef USE_BIG_KERNEL_LOCK
+//	spin_lock(&kernel_lock);
+//#endif
+
 	if (list_is_empty(&runq)) {
 		return NULL;
 	}
-	
+
 	task_min = NULL;
 	list_foreach(&runq, node) {
 		task = container_of(node, struct task, task_node);
@@ -46,6 +58,9 @@ struct task* get_task() {
 	if (task_min) {
 		list_remove(&task_min->task_node);
 	}
+//#ifdef USE_BIG_KERNEL_LOCK
+//	spin_unlock(&kernel_lock);
+//#endif
 	return task_min;
 }
 
@@ -505,6 +520,9 @@ void task_run(struct task *task)
 	task->task_runs++;
 	load_pml4((void *)PADDR(task->task_pml4));
 
+#ifdef USE_BIG_KERNEL_LOCK
+	spin_unlock(&kernel_lock);
+#endif
 	task_pop_frame(&task->task_frame);
 }
 

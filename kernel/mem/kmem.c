@@ -27,9 +27,6 @@ int kmem_init(void)
 int kmem_init_mp(void)
 {
 	/* LAB 6: your code here. */
-
-	// FIXME
-	cprintf("kmem_init_mp on CPU %u\n", this_cpu->cpu_id);
 	kmem_init();
 
 	return 0;

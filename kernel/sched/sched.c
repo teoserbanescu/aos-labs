@@ -46,18 +46,16 @@ void sched_yield(void)
 	struct list *node;
 	struct task *task;
 
-#ifdef USE_BIG_KERNEL_LOCK
-	spin_lock(&kernel_lock);
-#endif
+//#ifdef USE_BIG_KERNEL_LOCK
+//	spin_lock(&kernel_lock);
+//#endif
+
 	if (cur_task) {
 		cur_task->task_runtime = read_tsc() - cur_task->task_start_time;
 		insert_task(cur_task);
 	}
 
 	task = get_task();
-#ifdef USE_BIG_KERNEL_LOCK
-	spin_unlock(&kernel_lock);
-#endif
 
 	if (task) {
 		task->task_start_time = read_tsc();
@@ -73,15 +71,30 @@ void sched_yield(void)
 /* For now jump into the kernel monitor. */
 void sched_halt()
 {
+	int i;
+
 	this_cpu->cpu_status = CPU_HALTED;
 
-    cprintf("Destroyed the only task - nothing more to do!\n");
+	cprintf("CPU %u halted!\n", this_cpu->cpu_id);
 
-	asm volatile(
-	"cli\n"
-	"hlt\n");
+#ifdef USE_BIG_KERNEL_LOCK
+	spin_unlock(&kernel_lock);
+#endif
 
-    while (1) {
+/*	if there is one more cpu which is not halted yet, halt this one
+ *  else monitor this one
+ */
+	for (i = 0; i < ncpus; ++i) {
+		if (cpus[i].cpu_status != CPU_HALTED) {
+			asm volatile(
+			"cli\n"
+			"hlt\n");
+		}
+	}
+
+	cprintf("Destroyed the only task - nothing more to do!\n");
+
+	while (1) {
 		monitor(NULL);
 	}
 }
