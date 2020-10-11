@@ -9,13 +9,17 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#ifndef USE_BIG_KERNEL_LOCK
+//#ifndef USE_BIG_KERNEL_LOCK
+//struct spinlock console_lock = {
+//#ifdef DEBUG_SPINLOCK
+//	.name = "console_lock",
+//#endif
+//};
+//#endif
+
 struct spinlock console_lock = {
-#ifdef DEBUG_SPINLOCK
 	.name = "console_lock",
-#endif
 };
-#endif
 
 static void putch(int ch, int *cnt)
 {
@@ -27,7 +31,9 @@ int vcprintf(const char *fmt, va_list ap)
 {
 	int cnt = 0;
 
+	spin_lock(&console_lock);
 	vprintfmt((void*)putch, &cnt, fmt, ap);
+	spin_unlock(&console_lock);
 	return cnt;
 }
 

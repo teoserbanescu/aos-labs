@@ -74,7 +74,7 @@ void mp_main(void)
 	/* Set up segmentation, interrupts, system call support. */
 	gdt_init_mp();
 	idt_init_mp();
-	syscall_init_mp();
+//	syscall_init_mp(); // bonus syscall64
 
 	/* Set up the per-CPU slab allocator. */
 	kmem_init_mp();
@@ -87,9 +87,9 @@ void mp_main(void)
 
 	/* Schedule tasks. */
 	/* LAB 6: remove this code when you are ready */
-	asm volatile(
-		"cli\n"
-		"hlt\n");
+//	asm volatile(
+//		"cli\n"
+//		"hlt\n");
 
 	sched_yield();
 }

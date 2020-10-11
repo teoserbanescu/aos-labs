@@ -33,11 +33,6 @@ void kmain(struct boot_info *boot_info)
 	cons_init();
 	cprintf("\n");
 
-#ifdef USE_BIG_KERNEL_LOCK
-	spin_init(&kernel_lock, "kernel_lock");
-	spin_lock(&kernel_lock);
-#endif
-
 	/* Set up segmentation, interrupts and system calls. */
 	gdt_init();
 	idt_init();
@@ -55,18 +50,28 @@ void kmain(struct boot_info *boot_info)
 	lapic_init();
 	hpet_init(rsdp);
 
+	/* Set up the tasks. */
+	task_init();
+	sched_init();
+
+#ifdef USE_BIG_KERNEL_LOCK
+	spin_init(&kernel_lock, "kernel_lock");
+//	spin_lock(&kernel_lock);
+#endif
+
+#if defined(TEST)
+	TASK_CREATE(TEST, TASK_TYPE_USER);
+#endif
+
+	extern struct spinlock console_lock;
+	spin_init(&console_lock, "console_lock");
+
 	/* Setup the other cores */
 	mem_init_mp();
 	boot_cpus();
 	cprintf("Booted CPUs\n");
 
-	/* Set up the tasks. */
-	task_init();
-	sched_init();
-
-
 #if defined(TEST)
-	TASK_CREATE(TEST, TASK_TYPE_USER);
 	sched_yield();
 #else
 	lab3_check_kmem();

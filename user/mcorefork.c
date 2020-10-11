@@ -15,7 +15,6 @@ int main(int argc, char **argv)
 
 	pid = getpid();
 	cpuid = getcpuid();
-
 	printf("[PID %5u] Running on CPU %u\n", pid, cpuid);
 
 	return 0;

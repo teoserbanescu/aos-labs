@@ -155,7 +155,7 @@ pid_t sys_fork(void)
 {
 	/* LAB 5: your code here. */
 	struct task *clone;
-	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
+//	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	clone = task_clone(cur_task);
 	if (clone == NULL) {

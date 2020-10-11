@@ -30,6 +30,10 @@ struct task* get_task() {
 	struct list *node;
 	uint64_t min_time = -1;
 
+	if (list_is_empty(&runq)) {
+		return NULL;
+	}
+	
 	task_min = NULL;
 	list_foreach(&runq, node) {
 		task = container_of(node, struct task, task_node);
@@ -321,7 +325,7 @@ static void task_make_orphans(struct task *task) {
 	struct list *node, *next;
 	struct task *zombie;
 	struct task *child;
-	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
+//	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	// Reap all zombies.
 	if (!list_is_empty(&task->task_zombies)) {
@@ -352,7 +356,7 @@ static void task_make_orphans(struct task *task) {
 void task_free(struct task *task)
 {
 	struct task *waiting;
-	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
+//	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	/* LAB 5: your code here. */
 	task_make_orphans(task);
@@ -388,7 +392,7 @@ void task_free(struct task *task)
 
 static void task_zombie(struct task *task) {
 	struct task *parent;
-	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
+//	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	parent = pid2task(task->task_ppid, 0);
 
@@ -422,7 +426,7 @@ void task_destroy(struct task *task)
 {
 	/* LAB 5: your code here. */
 	int curr;
-	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
+//	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	curr = task == cur_task;
 	task_zombie(task);
@@ -486,7 +490,7 @@ void task_run(struct task *task)
 //	panic("task_run() not yet implemented");
 
 //	cprintf("Running task with PID %u\n", cur_task ? cur_task->task_pid : 0);
-	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
+//	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	if (!cur_task) {
 		cur_task = task;

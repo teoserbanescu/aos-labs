@@ -641,7 +641,6 @@ void idt_init(void)
 
 /* Set up the interrupt handlers per CPU. */
 void idt_init_mp(void) {
-	// FIXME should we have separate IDT per CPU?
 	idt_init();
 }
 
