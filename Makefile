@@ -73,7 +73,7 @@ PERL	:= perl
 # Compiler flags
 # -fno-builtin is required to avoid refs to undefined functions in the kernel.
 # -O1 and -fno-builtin to make backtraces work more nicely.
-CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O1 -fno-inline -fno-builtin -I$(TOP) -MD
+CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O0 -fno-inline -fno-builtin -I$(TOP) -MD
 CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -Wall -Wno-format -Wno-unused -Werror
 CFLAGS += -Iinclude
@@ -134,7 +134,7 @@ include kernel/Makefile
 include user/Makefile
 include lib/Makefile
 
-CPUS ?= 4
+CPUS ?= 2
 
 QEMUEXTRA = -m 128M
 QEMUOPTS = -drive format=raw,file=$(OBJDIR)/kernel/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)

@@ -55,10 +55,6 @@ void mp_main(void)
 {
 	struct rsdp *rsdp;
 
-#ifdef USE_BIG_KERNEL_LOCK
-	spin_lock(&kernel_lock);
-#endif
-
 	/* Eable the NX-bit. */
 	write_msr(MSR_EFER, read_msr(MSR_EFER) | MSR_EFER_NXE);
 

@@ -187,7 +187,7 @@ void mem_init_mp(void)
 		cpus[i].cpu_tss.rsp[0] = KSTACK_TOP - i * (KSTACK_SIZE + KSTACK_GAP);
 		cprintf("mem_init_mp core %u at kernel address %xd\n", i, cpus[i].cpu_tss.rsp[0]);
 //		boot_map_region(kernel_pml4, (void *)(KSTACK_TOP-KSTACK_SIZE), KSTACK_SIZE, (physaddr_t)bootstack , PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
-		populate_region(kernel_pml4, (void *)(KSTACK_TOP - i * (KSTACK_SIZE + KSTACK_GAP)), KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+		populate_region(kernel_pml4, (void *)cpus[i].cpu_tss.rsp[0] - KSTACK_SIZE, KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 	}
 }
 
