@@ -96,6 +96,10 @@ void mp_main(void)
  * in every other type of interrupt when we ge in kernel from an interrupt
  * similar to this lock there is one in main for boot_cpu
  */
+
+	extern volatile size_t nuser_tasks;
+	while(nuser_tasks < 2);
+
 #ifdef USE_BIG_KERNEL_LOCK
 	spin_lock(&kernel_lock);
 #endif

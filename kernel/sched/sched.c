@@ -14,7 +14,7 @@
 
 // global run list
 struct list runq;
-extern size_t nuser_tasks;
+extern volatile size_t nuser_tasks;
 
 #ifndef USE_BIG_KERNEL_LOCK
 struct spinlock runq_lock = {
@@ -77,15 +77,14 @@ void sched_halt()
 
 	cprintf("CPU %u halted!\n", this_cpu->cpu_id);
 
-#ifdef USE_BIG_KERNEL_LOCK
-	spin_unlock(&kernel_lock);
-#endif
-
 /*	if there is one more cpu which is not halted yet, halt this one
  *  else monitor this one
  */
 	for (i = 0; i < ncpus; ++i) {
 		if (cpus[i].cpu_status != CPU_HALTED) {
+#ifdef USE_BIG_KERNEL_LOCK
+			spin_unlock(&kernel_lock);
+#endif
 			asm volatile(
 			"cli\n"
 			"hlt\n");
@@ -94,6 +93,9 @@ void sched_halt()
 
 	cprintf("Destroyed the only task - nothing more to do!\n");
 
+#ifdef USE_BIG_KERNEL_LOCK
+	spin_unlock(&kernel_lock);
+#endif
 	while (1) {
 		monitor(NULL);
 	}

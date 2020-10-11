@@ -11,10 +11,11 @@
 #include <kernel/vma.h>
 
 #include <spinlock.h>
+#include <atomic.h>
 
 pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
-size_t nuser_tasks = 0;
+volatile size_t nuser_tasks = 0;
 
 extern struct list runq;
 
