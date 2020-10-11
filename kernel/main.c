@@ -60,7 +60,10 @@ void kmain(struct boot_info *boot_info)
 	spin_lock(&kernel_lock);
 #endif
 
+#ifndef USE_BIG_KERNEL_LOCK
 	spin_init(&console_lock, "console_lock");
+	spin_init(&buddy_lock, "buddy_lock");
+#endif
 
 	/* Setup the other cores */
 	mem_init_mp();

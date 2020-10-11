@@ -228,6 +228,10 @@ struct page_info *page_alloc(int alloc_flags)
 	struct page_info *page;
 	size_t req_order;
 
+#ifndef USE_BIG_KERNEL_LOCK
+	spin_lock(&buddy_lock);
+#endif
+
 	req_order = ((unsigned int)alloc_flags & (unsigned int)ALLOC_HUGE) ? BUDDY_2M_PAGE : BUDDY_4K_PAGE;
 	page = buddy_find(req_order);
     list_remove(&page->pp_node);
@@ -238,6 +242,10 @@ struct page_info *page_alloc(int alloc_flags)
 
 	if ((unsigned int)alloc_flags & (unsigned int)ALLOC_ZERO)
 		memset(page2kva(page), '\0', (uint64_t)PAGE_SIZE << req_order);
+
+#ifndef USE_BIG_KERNEL_LOCK
+	spin_unlock(&buddy_lock);
+#endif
 
 	return page;
 }
@@ -254,9 +262,17 @@ void page_free(struct page_info *pp)
 	/* LAB 1: your code here. */
 	struct page_info *page;
 
+#ifndef USE_BIG_KERNEL_LOCK
+	spin_lock(&buddy_lock);
+#endif
+
 	pp->pp_free = 1;
 	page = buddy_merge(pp);
 	list_push(page_free_list + page->pp_order, &page->pp_node);
+
+#ifndef USE_BIG_KERNEL_LOCK
+	spin_unlock(&buddy_lock);
+#endif
 }
 
 /*
@@ -265,9 +281,17 @@ void page_free(struct page_info *pp)
  */
 void page_decref(struct page_info *pp)
 {
+#ifndef USE_BIG_KERNEL_LOCK
+	spin_lock(&buddy_lock);
+#endif
+
 	if (--pp->pp_ref == 0) {
 		page_free(pp);
 	}
+
+#ifndef USE_BIG_KERNEL_LOCK
+	spin_unlock(&buddy_lock);
+#endif
 }
 
 static int in_page_range(void *p)

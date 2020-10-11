@@ -31,9 +31,15 @@ int vcprintf(const char *fmt, va_list ap)
 {
 	int cnt = 0;
 
+#ifndef USE_BIG_KERNEL_LOCK
 	spin_lock(&console_lock);
+#endif
+
 	vprintfmt((void*)putch, &cnt, fmt, ap);
+
+#ifdef USE_BIG_KERNEL_LOCK
 	spin_unlock(&console_lock);
+#endif
 	return cnt;
 }
 
