@@ -16,6 +16,8 @@
 struct list runq;
 volatile size_t runq_len = 0;
 extern volatile size_t nuser_tasks;
+struct spinlock halt_spinlock;
+
 
 //#ifndef USE_BIG_KERNEL_LOCK
 struct spinlock runq_lock = {
@@ -85,6 +87,27 @@ static void migrate() {
 	size_t n, i;
 	struct task *task;
 
+	n = ROUNDUP(runq_len, ncpus) / ncpus;
+
+//	int x = this_cpu->runq_len;
+//	int y = this_cpu->nextq_len;
+//
+//	if (this_cpu->runq_len + this_cpu->nextq_len < n) {
+//		n -= (this_cpu->runq_len + this_cpu->nextq_len);
+//		if (spin_trylock(&runq_lock)) {
+//			for (i = 0; i < n; ++i) {
+//				if (list_is_empty(&this_cpu->nextq))
+//					break;
+//				task = container_of(list_pop(&this_cpu->nextq), struct task, task_node);
+//				list_push_left(&runq, &task->task_node);
+//			}
+//			runq_len += i;
+//			spin_unlock(&runq_lock);
+//			this_cpu->nextq_len -= i;
+//			return;
+//		}
+//	}
+
 /*	busywait as long as we have tasks in the global queue
  *	or until all of tasks were run
  */
@@ -136,6 +159,7 @@ void sched_init(void)
 {
 	list_init(&runq);
 	sched_init_mp();
+	spin_init(&halt_spinlock, "halt_spinlock");
 }
 
 void sched_init_mp(void)
@@ -171,11 +195,11 @@ void sched_yield(void)
 	panic("yield returned");
 }
 
-/* For now jump into the kernel monitor. */
 void sched_halt()
 {
 	int i;
 
+	spin_lock(&halt_spinlock);
 	this_cpu->cpu_status = CPU_HALTED;
 
 	cprintf("CPU %u halted!\n", this_cpu->cpu_id);
@@ -185,9 +209,7 @@ void sched_halt()
  */
 	for (i = 0; i < ncpus; ++i) {
 		if (cpus[i].cpu_status != CPU_HALTED) {
-#ifdef USE_BIG_KERNEL_LOCK
-			spin_unlock(&kernel_lock);
-#endif
+			spin_unlock(&halt_spinlock);
 			asm volatile(
 			"cli\n"
 			"hlt\n");
@@ -196,9 +218,7 @@ void sched_halt()
 
 	cprintf("Destroyed the only task - nothing more to do!\n");
 
-#ifdef USE_BIG_KERNEL_LOCK
-	spin_unlock(&kernel_lock);
-#endif
+	spin_unlock(&halt_spinlock);
 	while (1) {
 		monitor(NULL);
 	}

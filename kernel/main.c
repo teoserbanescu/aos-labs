@@ -72,7 +72,6 @@ void kmain(struct boot_info *boot_info)
 	cprintf("Booted CPUs\n");
 
 #if defined(TEST)
-	TASK_CREATE(TEST, TASK_TYPE_USER);
 	sched_yield();
 #else
 	lab3_check_kmem();
