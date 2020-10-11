@@ -1,6 +1,7 @@
 #include <types.h>
 #include <string.h>
 #include <paging.h>
+#include <atomic.h>
 
 #include <kernel/mem.h>
 
@@ -23,7 +24,7 @@ int ptbl_alloc(physaddr_t *entry, uintptr_t base, uintptr_t end,
         page = page_alloc(ALLOC_ZERO);
         if (!page)
             panic("ptbl_alloc page alloc no mem\n");
-        page->pp_ref++;
+        atomic_inc(&page->pp_ref);
         *entry = PAGE_ADDR(page2pa(page)) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
 	}
 	return 0;

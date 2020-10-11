@@ -1,4 +1,5 @@
 #include <types.h>
+#include <atomic.h>
 
 #include <kernel/mem.h>
 #include <kernel/vma.h>
@@ -38,8 +39,8 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 			(vma->vm_flags & VM_WRITE)) {
 		*entry |= PAGE_WRITE;
 		page_copy = page_alloc(BUDDY_4K_PAGE);
-		page_copy->pp_ref++;
-		page->pp_ref--;
+		atomic_inc(&page_copy->pp_ref);
+		atomic_dec(&page->pp_ref);
 		memcpy(page2kva(page_copy), page2kva(page), PAGE_SIZE);
 
 		*entry = PAGE_ADDR(page2pa(page_copy)) | (*entry & PAGE_MASK);

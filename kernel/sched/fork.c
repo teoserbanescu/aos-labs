@@ -1,6 +1,7 @@
 #include <cpu.h>
 #include <error.h>
 #include <list.h>
+#include <atomic.h>
 
 #include <kernel/console.h>
 #include <kernel/mem.h>
@@ -17,7 +18,7 @@ static inline void dup_entry(physaddr_t *entry_dst, physaddr_t *entry_src) {
 	struct page_info *page;
 
 	page = page_alloc(ALLOC_ZERO);
-	page->pp_ref++;
+	atomic_inc(&page->pp_ref);
 	*entry_dst = PAGE_ADDR(page2pa(page)) | ENTRY_FLAGS(*entry_src);
 }
 
@@ -30,7 +31,7 @@ static int copy_ptbl(struct page_table *dst_pte, struct page_table *src_pte)
 			dst_pte->entries[i] = src_pte->entries[i] & ~PAGE_WRITE;
 			src_pte->entries[i] &= ~PAGE_WRITE;
 			page = pa2page(PAGE_ADDR(src_pte->entries[i]));
-			page->pp_ref++;
+			atomic_inc(&page->pp_ref);
 		}
 	}
 
@@ -164,7 +165,7 @@ pid_t sys_fork(void)
 
 	if (clone->task_type == TASK_TYPE_USER) {
 		extern int nuser_tasks;
-		nuser_tasks++;
+		atomic_inc(&nuser_tasks);
 	}
 
 	list_init(&clone->task_node);

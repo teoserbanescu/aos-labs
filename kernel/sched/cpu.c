@@ -2,5 +2,5 @@
 
 struct cpuinfo cpus[NCPUS];
 struct cpuinfo *boot_cpu = cpus;
-size_t ncpus = 1;
+volatile size_t ncpus = 1;
 

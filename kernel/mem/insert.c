@@ -1,5 +1,6 @@
 #include <types.h>
 #include <paging.h>
+#include <atomic.h>
 
 #include <kernel/mem.h>
 
@@ -29,7 +30,7 @@ static int insert_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	}
 
     // Page is not present, insert it.
-	page->pp_ref++;
+	atomic_inc(&page->pp_ref);
 	*entry = PAGE_ADDR(page2pa(page)) | info->flags;
 
 	return 0;
@@ -64,8 +65,8 @@ static int insert_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
     }
     else {
         // The new page is a 2M page.
-        page->pp_ref++;
-        *entry = PAGE_ADDR(page2pa(page)) | info->flags | PAGE_HUGE;
+		atomic_inc(&page->pp_ref);
+		*entry = PAGE_ADDR(page2pa(page)) | info->flags | PAGE_HUGE;
         return 0;
     }
 

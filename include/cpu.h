@@ -57,6 +57,6 @@ struct cpuinfo {
 extern struct cpuinfo cpus[NCPUS];
 extern struct cpuinfo *boot_cpu;
 #define this_cpu (cpus + lapic_cpunum())
-extern size_t ncpus;
+extern volatile size_t ncpus;
 
 #endif /* !defined(__ASSEMBLER__) */

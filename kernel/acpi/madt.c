@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <cpu.h>
+#include <atomic.h>
 
 #include <x86-64/asm.h>
 
@@ -12,7 +13,7 @@ void madt_parse_lapic(struct madt_lapic *lapic)
 {
 	if (lapic->apic_id < NCPUS) {
 		cpus[lapic->apic_id].cpu_id = lapic->cpu_id;
-		++ncpus;
+		atomic_inc(&ncpus);
 		cprintf("ncpus %d\n", ncpus);
 		return;
 	}

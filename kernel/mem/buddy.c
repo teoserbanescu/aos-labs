@@ -3,6 +3,7 @@
 #include <paging.h>
 #include <spinlock.h>
 #include <string.h>
+#include <atomic.h>
 
 #include <kernel/mem.h>
 
@@ -285,7 +286,8 @@ void page_decref(struct page_info *pp)
 	spin_lock(&buddy_lock);
 #endif
 
-	if (--pp->pp_ref == 0) {
+	atomic_dec(&pp->pp_ref);
+	if (pp->pp_ref == 0) {
 		page_free(pp);
 	}
 

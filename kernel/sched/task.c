@@ -130,7 +130,7 @@ static int task_setup_vas(struct task *task)
 		return -ENOMEM;
 	}
 
-	++page->pp_ref;
+	atomic_inc(&page->pp_ref);
 
 	/* Now set task->task_pml4 and initialize the page table.
 	 * Can you use kernel_pml4 as a template?
@@ -330,7 +330,7 @@ void task_create(uint8_t *binary, enum task_type type)
 	task = task_alloc(0);
 	task_load_elf(task, binary);
 	if (task->task_type == TASK_TYPE_USER) {
-		nuser_tasks++;
+		atomic_inc(&nuser_tasks);
 	}
 	/* LAB 5: your code here. */
 //	list_push(&runq, &task->task_node);
@@ -400,7 +400,7 @@ void task_free(struct task *task)
 	cprintf("[PID %5u] Freed task with PID %u\n", cur_task ? cur_task->task_pid : 0,
 	    task->task_pid);
 
-	nuser_tasks--;
+	atomic_dec(&nuser_tasks);
 
 	/* Free the task. */
 	kfree(task);
