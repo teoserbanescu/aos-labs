@@ -69,31 +69,27 @@ void mp_main(void)
 	/* LAB 6: your code here. */
 	/* Initialize the local APIC. */
 	pic_init();
-	rsdp = rsdp_find();
-	madt_init(rsdp);
 	lapic_init();
-	hpet_init(rsdp);
 
 	/* Set up segmentation, interrupts, system call support. */
 	gdt_init_mp();
 	idt_init_mp();
+	syscall_init_mp();
 
 	/* Set up the per-CPU slab allocator. */
 	kmem_init_mp();
 
 	/* Set up the per-CPU scheduler. */
-	// FIXME add per-CPU scheduler
+	sched_init_mp();
 
 	/* Notify the main CPU that we started up. */
 	xchg(&this_cpu->cpu_status, CPU_STARTED);
 
 	/* Schedule tasks. */
 	/* LAB 6: remove this code when you are ready */
-//	asm volatile(
-//		"cli\n"
-//		"hlt\n");
-
-
+	asm volatile(
+		"cli\n"
+		"hlt\n");
 
 	sched_yield();
 }
