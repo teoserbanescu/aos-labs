@@ -321,6 +321,7 @@ static void task_make_orphans(struct task *task) {
 	struct list *node, *next;
 	struct task *zombie;
 	struct task *child;
+	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	// Reap all zombies.
 	if (!list_is_empty(&task->task_zombies)) {
@@ -338,6 +339,8 @@ static void task_make_orphans(struct task *task) {
 	if (!list_is_empty(&task->task_children)) {
 		list_foreach_safe(&task->task_children, node, next) {
 			child = container_of(node, struct task, task_child);
+			cprintf("[PID %5u] Detaching task with PID %u\n", cur_task ? cur_task->task_pid : 0,
+					child->task_pid);
 			list_remove(&child->task_child);
 			child->task_ppid = 0;
 		}
@@ -349,6 +352,7 @@ static void task_make_orphans(struct task *task) {
 void task_free(struct task *task)
 {
 	struct task *waiting;
+	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	/* LAB 5: your code here. */
 	task_make_orphans(task);
@@ -363,7 +367,9 @@ void task_free(struct task *task)
 	/* Unmap the task from the PID map. */
 	tasks[task->task_pid] = NULL;
 
-	list_remove(&task->task_child);
+//	if (task->task_ppid != 0) {
+		list_remove(&task->task_child);
+//	}
 	list_remove(&task->task_node);
 
 	/* Unmap the user pages. */
@@ -382,6 +388,7 @@ void task_free(struct task *task)
 
 static void task_zombie(struct task *task) {
 	struct task *parent;
+	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	parent = pid2task(task->task_ppid, 0);
 
@@ -395,14 +402,15 @@ static void task_zombie(struct task *task) {
 			parent->task_wait == task) {
 		parent->task_frame.rax = task->task_pid;
 		parent->task_status = TASK_RUNNABLE;
-//		list_push(&runq, &parent->task_node);
 		insert_task(parent);
 		task_free(task);
 	}
 	else {
 		task->task_status = TASK_DYING;
 		// remove from the run queue
-		list_remove(&task->task_node);
+//		if (cur_task != task) {
+			list_remove(&task->task_node);
+//		}
 		list_push(&parent->task_zombies, &task->task_node);
 	}
 }
@@ -414,6 +422,7 @@ void task_destroy(struct task *task)
 {
 	/* LAB 5: your code here. */
 	int curr;
+	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	curr = task == cur_task;
 	task_zombie(task);
@@ -477,6 +486,7 @@ void task_run(struct task *task)
 //	panic("task_run() not yet implemented");
 
 //	cprintf("Running task with PID %u\n", cur_task ? cur_task->task_pid : 0);
+	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	if (!cur_task) {
 		cur_task = task;
