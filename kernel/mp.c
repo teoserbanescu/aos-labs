@@ -97,10 +97,10 @@ void mp_main(void)
  * similar to this lock there is one in main for boot_cpu
  */
 
-	extern volatile size_t nuser_tasks;
-	while(nuser_tasks < 2);
 
 #ifdef USE_BIG_KERNEL_LOCK
+	extern volatile size_t nuser_tasks;
+	while(nuser_tasks < 2);
 	spin_lock(&kernel_lock);
 #endif
 

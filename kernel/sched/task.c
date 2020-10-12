@@ -11,59 +11,10 @@
 #include <kernel/vma.h>
 
 #include <spinlock.h>
-#include <atomic.h>
 
 pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
 volatile size_t nuser_tasks = 0;
-
-extern struct list runq;
-
-int insert_task(struct task *task) {
-//#ifdef USE_BIG_KERNEL_LOCK
-//	spin_lock(&kernel_lock);
-//#endif
-	list_push(&runq, &task->task_node);
-//#ifdef USE_BIG_KERNEL_LOCK
-//	spin_unlock(&kernel_lock);
-//#endif
-	return 0;
-}
-
-/* This function chooses the task that executed the least on the CPU
- * A red black tree or a priority queue would be a better approach,
- * but we choose to iterate through the list for now.
- * */
-struct task* get_task() {
-	struct task *task, *task_min;
-	struct list *node;
-	uint64_t min_time = -1;
-
-//#ifdef USE_BIG_KERNEL_LOCK
-//	spin_lock(&kernel_lock);
-//#endif
-
-	if (list_is_empty(&runq)) {
-		return NULL;
-	}
-
-	task_min = NULL;
-	list_foreach(&runq, node) {
-		task = container_of(node, struct task, task_node);
-		if (task->task_runtime < min_time) {
-			min_time = task->task_runtime;
-			task_min = task;
-		}
-	}
-
-	if (task_min) {
-		list_remove(&task_min->task_node);
-	}
-//#ifdef USE_BIG_KERNEL_LOCK
-//	spin_unlock(&kernel_lock);
-//#endif
-	return task_min;
-}
 
 /* Looks up the respective task for a given PID.
  * If check_perm is non-zero, this function checks if the PID maps to the

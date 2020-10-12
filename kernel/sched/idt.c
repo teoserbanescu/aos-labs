@@ -662,7 +662,7 @@ void int_dispatch(struct int_frame *frame)
 		case INT_BREAK:
 			while(1) monitor(NULL);
 		case IRQ_TIMER:
-			cprintf("timer at %u\n", read_tsc());
+//			cprintf("timer at %u\n", read_tsc());
 			lapic_eoi();
 			sched_yield();
 	default: break;
@@ -730,8 +730,8 @@ void page_fault_handler(struct int_frame *frame)
 	/* Handle kernel-mode page faults. */
 	/* LAB 3: your code here. */
     if ((frame->cs & 3) == 0) {
-        cprintf("[PID %5u] user fault va %p ip %p\n",
-                cur_task->task_pid, fault_va, frame->rip);
+        cprintf("[PID %5u] user fault va %p ip %p cpuid %u\n",
+                cur_task->task_pid, fault_va, frame->rip, this_cpu->cpu_id);
         print_int_frame(frame);
         // FIXME what if a kernel page has not been mapped yet?
 //        Leave it like this for now to see when it crashes and fit it then

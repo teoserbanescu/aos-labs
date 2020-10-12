@@ -65,13 +65,16 @@ void kmain(struct boot_info *boot_info)
 	spin_init(&buddy_lock, "buddy_lock");
 #endif
 
+#if defined(TEST)
+	TASK_CREATE(TEST, TASK_TYPE_USER);
+#endif
+
 	/* Setup the other cores */
 	mem_init_mp();
 	boot_cpus();
 	cprintf("Booted CPUs\n");
 
 #if defined(TEST)
-	TASK_CREATE(TEST, TASK_TYPE_USER);
 	sched_yield();
 #else
 	lab3_check_kmem();
