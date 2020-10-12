@@ -339,9 +339,7 @@ void task_free(struct task *task)
 	/* Unmap the task from the PID map. */
 	tasks[task->task_pid] = NULL;
 
-//	if (task->task_ppid != 0) {
-		list_remove(&task->task_child);
-//	}
+	list_remove(&task->task_child);
 	list_remove(&task->task_node);
 
 	/* Unmap the user pages. */
@@ -349,8 +347,8 @@ void task_free(struct task *task)
 	unmap_user_pages(task->task_pml4);
 
 	/* Note the task's demise. */
-	cprintf("[PID %5u] Freed task with PID %u\n", cur_task ? cur_task->task_pid : 0,
-	    task->task_pid);
+	cprintf("[PID %5u] Freed task with PID %u cpuid %u\n", cur_task ? cur_task->task_pid : 0,
+	    task->task_pid, this_cpu->cpu_id);
 
 	atomic_dec(&nuser_tasks);
 
@@ -380,9 +378,7 @@ static void task_zombie(struct task *task) {
 	else {
 		task->task_status = TASK_DYING;
 		// remove from the run queue
-//		if (cur_task != task) {
-			list_remove(&task->task_node);
-//		}
+		list_remove(&task->task_node);
 		list_push(&parent->task_zombies, &task->task_node);
 	}
 }

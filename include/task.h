@@ -76,10 +76,10 @@ struct task {
 	uint64_t task_runtime;
 	uint64_t task_start_time;
 
-#ifndef USE_BIG_KERNEL_LOCK
+//#ifndef USE_BIG_KERNEL_LOCK
 	/* Per-task lock */
 	struct spinlock task_lock;
-#endif
+//#endif
 };
 
 void task_init_frame(struct task *task);

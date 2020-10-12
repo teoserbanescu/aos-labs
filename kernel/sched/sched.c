@@ -40,15 +40,20 @@ int insert_task(struct task *task) {
 
 	if (this_cpu->runq_len + this_cpu->nextq_len > n) {
 		if (spin_trylock(&runq_lock)) {
+			spin_lock(&task->task_lock);
 			list_push_left(&runq, &task->task_node);
+			spin_unlock(&task->task_lock);
 			runq_len++;
 			spin_unlock(&runq_lock);
 			return 0;
 		}
 	}
 
+	spin_lock(&task->task_lock);
 	list_push_left(&this_cpu->nextq, &task->task_node);
+	spin_unlock(&task->task_lock);
 	this_cpu->nextq_len++;
+
 	return 0;
 }
 
@@ -77,7 +82,9 @@ struct task* get_min_task() {
 	}
 
 	if (task_min) {
+		spin_lock(&task_min->task_lock);
 		list_remove(&task_min->task_node);
+		spin_unlock(&task_min->task_lock);
 		this_cpu->runq_len--;
 	}
 	return task_min;
@@ -89,25 +96,6 @@ static void migrate() {
 
 	n = ROUNDUP(runq_len, ncpus) / ncpus;
 
-//	int x = this_cpu->runq_len;
-//	int y = this_cpu->nextq_len;
-//
-//	if (this_cpu->runq_len + this_cpu->nextq_len < n) {
-//		n -= (this_cpu->runq_len + this_cpu->nextq_len);
-//		if (spin_trylock(&runq_lock)) {
-//			for (i = 0; i < n; ++i) {
-//				if (list_is_empty(&this_cpu->nextq))
-//					break;
-//				task = container_of(list_pop(&this_cpu->nextq), struct task, task_node);
-//				list_push_left(&runq, &task->task_node);
-//			}
-//			runq_len += i;
-//			spin_unlock(&runq_lock);
-//			this_cpu->nextq_len -= i;
-//			return;
-//		}
-//	}
-
 /*	busywait as long as we have tasks in the global queue
  *	or until all of tasks were run
  */
@@ -117,16 +105,17 @@ static void migrate() {
 		return;
 	}
 
+	spin_lock(&runq_lock);
 //	TODO try with nuser_tasks or runq_len
 	n = ROUNDUP(runq_len, ncpus) / ncpus;
-
-	spin_lock(&runq_lock);
 
 	runq_len -= n;
 
 	for (i = 0; i < n; ++i) {
 		task = container_of(list_pop(&runq), struct task, task_node);
+		spin_lock(&task->task_lock);
 		list_push_left(&this_cpu->runq, &task->task_node);
+		spin_unlock(&task->task_lock);
 	}
 
 	spin_unlock(&runq_lock);
@@ -213,6 +202,7 @@ void sched_halt()
 			asm volatile(
 			"cli\n"
 			"hlt\n");
+			while (1);
 		}
 	}
 
