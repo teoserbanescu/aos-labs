@@ -376,10 +376,14 @@ static void task_zombie(struct task *task) {
 		task_free(task);
 	}
 	else {
-		task->task_status = TASK_DYING;
 		// remove from the run queue
 		list_remove(&task->task_node);
-		list_push(&parent->task_zombies, &task->task_node);
+		if (parent->task_status != TASK_DYING) {
+			list_push(&parent->task_zombies, &task->task_node);
+		}
+		else {
+			task_free(task);
+		}
 	}
 }
 
@@ -393,6 +397,7 @@ void task_destroy(struct task *task)
 //	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	curr = task == cur_task;
+	task->task_status = TASK_DYING;
 	task_zombie(task);
 
 	if (curr) {

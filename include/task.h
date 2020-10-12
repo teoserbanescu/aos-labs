@@ -48,7 +48,7 @@ struct task {
 	enum task_type task_type;
 
 	/* The task status. */
-	unsigned task_status;
+	volatile unsigned task_status;
 
 	/* The number of times the task has been run. */
 	unsigned task_runs;
