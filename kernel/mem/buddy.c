@@ -263,17 +263,9 @@ void page_free(struct page_info *pp)
 	/* LAB 1: your code here. */
 	struct page_info *page;
 
-#ifndef USE_BIG_KERNEL_LOCK
-	spin_lock(&buddy_lock);
-#endif
-
 	pp->pp_free = 1;
 	page = buddy_merge(pp);
 	list_push(page_free_list + page->pp_order, &page->pp_node);
-
-#ifndef USE_BIG_KERNEL_LOCK
-	spin_unlock(&buddy_lock);
-#endif
 }
 
 /*

@@ -21,6 +21,7 @@ void kmain(struct boot_info *boot_info)
 {
 	extern char edata[], end[];
 	extern struct spinlock console_lock;
+	extern struct spinlock buddy_lock;
 	struct rsdp *rsdp;
 
 	/* Before doing anything else, complete the ELF loading process.

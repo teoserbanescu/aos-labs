@@ -11,6 +11,7 @@
 #include <kernel/vma.h>
 
 #include <spinlock.h>
+#include <include/atomic.h>
 
 pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
@@ -458,6 +459,13 @@ void task_run(struct task *task)
 
 //	cprintf("Running task with PID %u\n", cur_task ? cur_task->task_pid : 0);
 //	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
+
+	if (task->task_status == TASK_DYING) {
+//		Another core killed this task
+		cprintf("The task cannot run because it's dead; cpuid %u \n", this_cpu->cpu_id);
+		cur_task = NULL;
+		sched_yield();
+	}
 
 	if (!cur_task) {
 		cur_task = task;
