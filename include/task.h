@@ -12,7 +12,13 @@ typedef int32_t pid_t;
 
 int task_setup_pid();
 
-struct task *task_alloc(pid_t ppid);
+/* Special task types. */
+enum task_type {
+	TASK_TYPE_USER = 0,
+	TASK_TYPE_KERNEL,
+};
+
+struct task *task_alloc(pid_t ppid, enum task_type type);
 
 /* Values of task_status in struct task. */
 enum {
@@ -26,11 +32,6 @@ enum {
 enum {
 	TASK_INT = 0,
 	TASK_SYSCALL,
-};
-
-/* Special task types. */
-enum task_type {
-	TASK_TYPE_USER = 0,
 };
 
 struct task {
@@ -82,7 +83,7 @@ struct task {
 //#endif
 };
 
-void task_init_frame(struct task *task);
+void task_init_frame(struct task *task, enum task_type type);
 
 int insert_task(struct task *task);
 struct task* get_task();

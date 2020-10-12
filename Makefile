@@ -134,7 +134,7 @@ include kernel/Makefile
 include user/Makefile
 include lib/Makefile
 
-CPUS ?= 2
+CPUS ?= 1
 
 QEMUEXTRA = -m 128M
 QEMUOPTS = -drive format=raw,file=$(OBJDIR)/kernel/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)

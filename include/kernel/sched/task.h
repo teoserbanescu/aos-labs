@@ -13,6 +13,8 @@ void task_destroy(struct task *task);
 void task_pop_frame(struct int_frame *frame);
 void task_run(struct task *task);
 
+void ktask_create();
+
 //hack for exec, remove from here and make static after we have fs
 void task_load_elf(struct task *task, uint8_t *binary);
 

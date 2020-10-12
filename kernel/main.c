@@ -70,6 +70,8 @@ void kmain(struct boot_info *boot_info)
 	TASK_CREATE(TEST, TASK_TYPE_USER);
 #endif
 
+	ktask_create();
+
 	/* Setup the other cores */
 	mem_init_mp();
 	boot_cpus();

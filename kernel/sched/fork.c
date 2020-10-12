@@ -129,7 +129,7 @@ struct task *task_clone(struct task *source)
 	struct task *clone;
 
 	/* Allocate a new task struct. */
-	clone = task_alloc(source->task_pid);
+	clone = task_alloc(source->task_pid, source->task_type);
 
 	if (!clone) {
 		return NULL;

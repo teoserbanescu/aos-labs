@@ -125,20 +125,29 @@ int task_setup_pid(struct task *task) {
 	return 0;
 }
 
-void task_init_frame(struct task *task) {
+void task_init_frame(struct task *task, enum task_type type) {
 	memset(&task->task_frame, 0, sizeof task->task_frame);
 
-	task->task_frame.ds = GDT_UDATA | 3;
-	task->task_frame.ss = GDT_UDATA | 3;
-	task->task_frame.rsp = USTACK_TOP;
-	task->task_frame.cs = GDT_UCODE | 3;
-	task->task_frame.rflags = FLAGS_IF;
+	if (type == TASK_TYPE_USER) {
+		task->task_frame.ds = GDT_UDATA | 3;
+		task->task_frame.ss = GDT_UDATA | 3;
+		task->task_frame.rsp = USTACK_TOP;
+		task->task_frame.cs = GDT_UCODE | 3;
+		task->task_frame.rflags = FLAGS_IF;
+	}
+	else {
+		task->task_frame.ds = GDT_KDATA | 0;
+		task->task_frame.ss = GDT_KDATA | 0;
+		task->task_frame.rsp = USTACK_TOP;
+		task->task_frame.cs = GDT_KCODE | 0;
+//		interrupts are disabled for kernel tasks
+	}
 }
 
 /* Allocates and initializes a new task.
  * On success, the new task is returned.
  */
-struct task *task_alloc(pid_t ppid)
+struct task *task_alloc(pid_t ppid, enum task_type type)
 {
 	struct task *task;
 
@@ -162,11 +171,11 @@ struct task *task_alloc(pid_t ppid)
 
 	/* Set up the task. */
 	task->task_ppid = ppid;
-	task->task_type = TASK_TYPE_USER;
+	task->task_type = type;
 	task->task_status = TASK_RUNNABLE;
 	task->task_runs = 0;
 
-	task_init_frame(task);
+	task_init_frame(task, type);
 
 	rb_init(&task->task_rb);
 	list_init(&task->task_mmap);
@@ -279,13 +288,36 @@ void task_create(uint8_t *binary, enum task_type type)
 	/* LAB 3: your code here. */
 	struct task *task;
 
-	task = task_alloc(0);
+	task = task_alloc(0, type);
 	task_load_elf(task, binary);
 	if (task->task_type == TASK_TYPE_USER) {
 		atomic_inc(&nuser_tasks);
 	}
 	/* LAB 5: your code here. */
-//	list_push(&runq, &task->task_node);
+	insert_task(task);
+}
+
+
+void kjob() {
+	cprintf("hello from kernel task %u\n", this_cpu->cpu_id);
+	task_destroy(cur_task);
+}
+
+void ktask_create()
+{
+	struct task *task;
+	struct page_info *page;
+
+	task = task_alloc(0, TASK_TYPE_KERNEL);
+	task->task_pml4 = kernel_pml4;
+	task->task_frame.rsp = KSTACK_TOP - ncpus * (PAGE_SIZE + KSTACK_GAP);
+//	populate_region(task->task_pml4, (void*) task->task_frame.rsp, KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+	page = page2kva(page_alloc(ALLOC_ZERO));
+	page_insert(task->task_pml4, page, (void*) task->task_frame.rsp, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+
+	task->task_frame.rip = (uint64_t)kjob;
+
+//	atomic_inc(&nuser_tasks);
 	insert_task(task);
 }
 
@@ -344,14 +376,16 @@ void task_free(struct task *task)
 	tasks[task->task_pid] = NULL;
 
 	/* Unmap the user pages. */
-	free_vmas(task);
-	unmap_user_pages(task->task_pml4);
+	if (task->task_pml4 != kernel_pml4) {
+		unmap_user_pages(task->task_pml4);
+		free_vmas(task);
+		atomic_dec(&nuser_tasks);
+	}
 
 	/* Note the task's demise. */
 	cprintf("[PID %5u] Freed task with PID %u cpuid %u\n", cur_task ? cur_task->task_pid : 0,
 	    task->task_pid, this_cpu->cpu_id);
 
-	atomic_dec(&nuser_tasks);
 
 	/* Free the task. */
 	kfree(task);

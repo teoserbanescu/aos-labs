@@ -87,7 +87,7 @@ static int sys_exec(char *path) {
 	list_init(&cur_task->task_node);
 	rb_init(&cur_task->task_rb);
 
-	task_init_frame(cur_task);
+	task_init_frame(cur_task, cur_task->task_type);
 	task_load_elf(cur_task, (uint8_t*)path);
 
 	task_run(cur_task);
