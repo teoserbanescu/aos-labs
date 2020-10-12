@@ -16,6 +16,7 @@
 pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
 volatile size_t nuser_tasks = 0;
+struct spinlock pid_lock;
 
 /* Looks up the respective task for a given PID.
  * If check_perm is non-zero, this function checks if the PID maps to the
@@ -37,7 +38,9 @@ struct task *pid2task(pid_t pid, int check_perm)
 	}
 
 	/* Look up the task in the PID map. */
+	spin_lock(&pid_lock);
 	task = tasks[pid];
+	spin_unlock(&pid_lock);
 
 	/* No such mapping found. */
 	if (!task) {
@@ -105,6 +108,7 @@ static int task_setup_vas(struct task *task)
 int task_setup_pid(struct task *task) {
 	pid_t pid;
 
+	spin_lock(&pid_lock);
 	for (pid = 1; pid < pid_max; ++pid) {
 		if (!tasks[pid]) {
 			tasks[pid] = task;
@@ -112,6 +116,7 @@ int task_setup_pid(struct task *task) {
 			break;
 		}
 	}
+	spin_unlock(&pid_lock);
 
 	/* We are out of PIDs. */
 	if (pid == pid_max) {
@@ -140,7 +145,9 @@ void task_init_frame(struct task *task, enum task_type type) {
 		task->task_frame.ss = GDT_KDATA | 0;
 		task->task_frame.rsp = USTACK_TOP;
 		task->task_frame.cs = GDT_KCODE | 0;
-//		interrupts are disabled for kernel tasks
+/*	Interrupts are disabled for kernel tasks
+ *	It would be crazy hard to remember what we were doing before interrupt
+ */
 	}
 }
 
@@ -238,9 +245,6 @@ void task_load_elf(struct task *task, uint8_t *binary)
 
 	elf_hdr = (struct elf *)binary;
 	ph = (struct elf_proghdr *)((uint8_t *)elf_hdr + elf_hdr->e_phoff);
-	// FIXME should not load address space, we are using vmas
-//	load_pml4((void *)PADDR(task->task_pml4)); // has to be here to reload address space
-
 
 	for (i = 0; i < elf_hdr->e_phnum; ++i, ++ph) {
 		if (ph->p_type != ELF_PROG_LOAD || ph->p_va == 0 || ph->p_memsz == 0) {
@@ -288,6 +292,7 @@ void task_create(uint8_t *binary, enum task_type type)
 	/* LAB 3: your code here. */
 	struct task *task;
 
+	spin_init(&pid_lock, "pid_lock");
 	task = task_alloc(0, type);
 	task_load_elf(task, binary);
 	if (task->task_type == TASK_TYPE_USER) {
@@ -297,9 +302,16 @@ void task_create(uint8_t *binary, enum task_type type)
 	insert_task(task);
 }
 
-
+/* Cooperative scheduling (no preemption)
+ * Rescheduled as long as we have user tasks
+ *
+ *
+ * */
 void kjob() {
 	cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
+	if (nuser_tasks) {
+		sched_yield();
+	}
 	task_destroy(cur_task);
 }
 
@@ -308,6 +320,7 @@ void ktask_create()
 	struct task *task;
 
 	task = task_alloc(0, TASK_TYPE_KERNEL);
+	task->task_runtime = -2; /* be nice and set priority to lowest in order to let user tasks run first*/
 	task->task_pml4 = kernel_pml4;
 	task->task_frame.rsp = KSTACK_TOP - ncpus * (KSTACK_SIZE + KSTACK_GAP);
 	populate_region(task->task_pml4, (void*) task->task_frame.rsp - KSTACK_SIZE, KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
@@ -370,7 +383,9 @@ void task_free(struct task *task)
 	}
 
 	/* Unmap the task from the PID map. */
+	spin_lock(&pid_lock);
 	tasks[task->task_pid] = NULL;
+	spin_unlock(&pid_lock);
 
 	/* Unmap the user pages. */
 	if (task->task_pml4 != kernel_pml4) {

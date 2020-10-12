@@ -29,16 +29,15 @@ struct spinlock runq_lock = {
 
 /* Calculate an average of how many tasks a cpu should have
  * If current cpu has more than average then try to push the new task in the global queue
+ * Try to push kernel tasks into global because they are destroyed only when there are no more user tasks
+ * and they keep getting rescheduled and they would keep the same cpu busy
  * */
 int insert_task(struct task *task) {
 	size_t n;
 
 	n = ROUNDUP(runq_len, ncpus) / ncpus;
 
-	int x = this_cpu->runq_len;
-	int y = this_cpu->nextq_len;
-
-	if (this_cpu->runq_len + this_cpu->nextq_len > n) {
+	if (this_cpu->runq_len + this_cpu->nextq_len > n || task->task_type == TASK_TYPE_KERNEL) {
 		if (spin_trylock(&runq_lock)) {
 			spin_lock(&task->task_lock);
 			list_push_left(&runq, &task->task_node);
