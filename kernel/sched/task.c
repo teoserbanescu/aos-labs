@@ -299,21 +299,18 @@ void task_create(uint8_t *binary, enum task_type type)
 
 
 void kjob() {
-	cprintf("hello from kernel task %u\n", this_cpu->cpu_id);
+	cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
 	task_destroy(cur_task);
 }
 
 void ktask_create()
 {
 	struct task *task;
-	struct page_info *page;
 
 	task = task_alloc(0, TASK_TYPE_KERNEL);
 	task->task_pml4 = kernel_pml4;
-	task->task_frame.rsp = KSTACK_TOP - ncpus * (PAGE_SIZE + KSTACK_GAP);
-//	populate_region(task->task_pml4, (void*) task->task_frame.rsp, KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
-	page = page2kva(page_alloc(ALLOC_ZERO));
-	page_insert(task->task_pml4, page, (void*) task->task_frame.rsp, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+	task->task_frame.rsp = KSTACK_TOP - ncpus * (KSTACK_SIZE + KSTACK_GAP);
+	populate_region(task->task_pml4, (void*) task->task_frame.rsp - KSTACK_SIZE, KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 
 	task->task_frame.rip = (uint64_t)kjob;
 
