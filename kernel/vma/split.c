@@ -19,8 +19,6 @@ struct vma *split_vma(struct task *task, struct vma *lhs, void *addr)
     rhs = add_anonymous_vma(task, lhs->vm_name, addr,
                          lhs->vm_end - addr, lhs->vm_flags);
 
-    //FIXME support executable VMAs too?
-
     lhs->vm_end = addr;
 
 	return rhs;
