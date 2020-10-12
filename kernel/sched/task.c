@@ -327,7 +327,11 @@ void task_free(struct task *task)
 //	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
 	/* LAB 5: your code here. */
+	spin_lock(&task->task_lock);
 	task_make_orphans(task);
+	list_remove(&task->task_child);
+	list_remove(&task->task_node);
+	spin_unlock(&task->task_lock);
 
 	/* If we are freeing the current task, switch to the kernel_pml4
 	 * before freeing the page tables, just in case the page gets re-used.
@@ -338,9 +342,6 @@ void task_free(struct task *task)
 
 	/* Unmap the task from the PID map. */
 	tasks[task->task_pid] = NULL;
-
-	list_remove(&task->task_child);
-	list_remove(&task->task_node);
 
 	/* Unmap the user pages. */
 	free_vmas(task);
@@ -461,15 +462,16 @@ void task_run(struct task *task)
 //	cprintf("Running task with PID %u\n", cur_task ? cur_task->task_pid : 0);
 //	cprintf("[PID %5u] %s\n", cur_task ? cur_task->task_pid : 0, __PRETTY_FUNCTION__ );
 
-	if (task->task_status == TASK_DYING) {
+
+	if (!cur_task) {
+		cur_task = task;
+	}
+
+	if (cur_task->task_status == TASK_DYING) {
 //		Another core killed this task
 		cprintf("The task cannot run because it's dead; cpuid %u \n", this_cpu->cpu_id);
 		cur_task = NULL;
 		sched_yield();
-	}
-
-	if (!cur_task) {
-		cur_task = task;
 	}
 
 	if (cur_task->task_status == TASK_RUNNING) {
