@@ -25,6 +25,133 @@ KERNEL_SRCFILES := \
 	lib/readline.c \
 	lib/string.c
 
+# LAB 2 code
+KERNEL_SRCFILES += \
+	kernel/mem/dump.c \
+	kernel/mem/insert.c \
+	kernel/mem/lookup.c \
+	kernel/mem/map.c \
+	kernel/mem/page.c \
+	kernel/mem/ptbl.c \
+	kernel/mem/remove.c \
+	kernel/mem/tlb.c \
+	kernel/mem/walk.c \
+	kernel/tests/lab2.c
+
+# LAB 3 code
+KERNEL_SRCFILES += \
+	kernel/mem/kmem.c \
+	kernel/mem/populate.c \
+	kernel/mem/protect.c \
+	kernel/mem/slab.c \
+	kernel/mem/user.c \
+	kernel/sched/cpu.c \
+	kernel/sched/gdt.c \
+	kernel/sched/idt.c \
+	kernel/sched/stubs.S \
+	kernel/sched/syscall.c \
+	kernel/sched/task.c \
+	kernel/tests/lab3.c \
+
+# LAB 3 binaries
+KERNEL_BINFILES := \
+	user/badsegment \
+	user/breakpoint \
+	user/divzero \
+	user/evilhello \
+	user/faultexec \
+	user/faultwrite \
+	user/kernelexec \
+	user/kernelread \
+	user/kernelwrite \
+	user/hello \
+	user/nullexec \
+	user/nullhello \
+	user/nullread \
+	user/nullwrite \
+	user/overflowhello \
+	user/softint \
+	user/testbss
+
+# LAB 4 code
+KERNEL_SRCFILES += \
+	kernel/vma/find.c \
+	kernel/vma/insert.c \
+	kernel/vma/merge.c \
+	kernel/vma/pfault.c \
+	kernel/vma/populate.c \
+	kernel/vma/protect.c \
+	kernel/vma/remove.c \
+	kernel/vma/show.c \
+	kernel/vma/split.c \
+	kernel/vma/syscall.c \
+	kernel/vma/walk.c
+
+KERNEL_BINFILES += \
+	user/dontneed \
+	user/evilmadvise \
+	user/evilmmap \
+	user/evilmprotect \
+	user/evilmunmap \
+	user/lazyvma \
+	user/mapexec \
+	user/mapfixed \
+	user/mapleft \
+	user/mapnone \
+	user/mapnull \
+	user/mapright \
+	user/mapwrite \
+	user/mmap \
+	user/mergevma \
+	user/mprotect \
+	user/munmap \
+	user/mustneed \
+	user/persistnone \
+	user/protexec \
+	user/protnone \
+	user/protwrite \
+	user/splitvma \
+	user/thp \
+	user/unmapleft \
+	user/unmapright \
+	user/unmaptext \
+	user/vma \
+	user/willneed
+
+# LAB 5 code
+KERNEL_SRCFILES += \
+	kernel/rtc.c \
+	kernel/acpi/acpi.c \
+	kernel/acpi/hpet.c \
+	kernel/acpi/lapic.c \
+	kernel/acpi/madt.c \
+	kernel/sched/fork.c \
+	kernel/sched/sched.c \
+	kernel/sched/wait.c \
+	lib/time.c
+
+# LAB 5 binaries
+KERNEL_BINFILES += \
+	user/basicfork \
+	user/cowfork \
+	user/evilchild \
+	user/reaper \
+	user/wait \
+	user/waitnone \
+	user/waitself \
+	user/yield
+#	user/exechello
+
+# LAB 6 code
+KERNEL_SRCFILES += \
+	kernel/boot_ap.S \
+	kernel/mp.c \
+	kernel/spinlock.c
+
+# LAB 6 binaries
+KERNEL_BINFILES += \
+	user/mcorefork
+
 # Only build files if they exist.
 KERNEL_SRCFILES := $(wildcard $(KERNEL_SRCFILES))
 

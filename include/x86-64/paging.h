@@ -50,6 +50,8 @@
 #define PAGE_UMASK (PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC | PAGE_USER)
 #define PAGE_ADDR(x) ((x) & ~PAGE_MASK)
 
+#define entry2page_table(entry) ((struct page_table *) KADDR(PAGE_ADDR(entry)))
+
 #define PF_PRESENT  (1 << 0)
 #define PF_WRITE    (1 << 1)
 #define PF_USER     (1 << 2)

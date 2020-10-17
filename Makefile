@@ -73,7 +73,7 @@ PERL	:= perl
 # Compiler flags
 # -fno-builtin is required to avoid refs to undefined functions in the kernel.
 # -O1 and -fno-builtin to make backtraces work more nicely.
-CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O1 -fno-inline -fno-builtin -I$(TOP) -MD
+CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O0 -fno-inline -fno-builtin -I$(TOP) -MD
 CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -Wall -Wno-format -Wno-unused -Werror
 CFLAGS += -Iinclude
@@ -107,6 +107,7 @@ KERNEL_CFLAGS := $(CFLAGS) -DOpenLSD_KERNEL -gdwarf-2 -mcmodel=large -fno-pie
 KERNEL_CFLAGS += -DKERNEL_LMA=0x100000
 KERNEL_CFLAGS += -DKERNEL_VMA=0xFFFF800000000000
 KERNEL_CFLAGS += -mno-sse
+#KERNEL_CFLAGS += -DUSE_BIG_KERNEL_LOCK
 
 KERNEL_LDFLAGS := -Tkernel/kernel.ld -nostdlib -n -fno-pie
 KERNEL_LDFLAGS += -Wl,--defsym,KERNEL_LMA=0x100000
@@ -130,9 +131,12 @@ $(OBJDIR)/.vars.%: FORCE
 # Include Makefiles for subdirectories
 include boot/Makefile
 include kernel/Makefile
+include user/Makefile
+include lib/Makefile
 
-CPUS ?= 1
+CPUS ?= 2
 
+QEMUEXTRA = -m 128M
 QEMUOPTS = -drive format=raw,file=$(OBJDIR)/kernel/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)
 QEMUOPTS += $(shell if $(QEMU) -nographic -help | grep -q '^-D '; then echo '-D qemu.log'; fi)
 QEMUOPTS += -no-reboot -D /dev/stdout
@@ -285,16 +289,26 @@ prep-%:
 	$(V)$(MAKE) "INIT_CFLAGS=${INIT_CFLAGS} -DTEST=`case $* in *_*) echo $*;; *) echo user_$*;; esac`" $(IMAGES)
 
 run-%-nox-gdb: prep-% pre-qemu
-	$(QEMU) -nographic $(QEMUOPTS) -S
-
+	@sed "s/localhost:1234/localhost:$(GDBPORT)/" < .gdbrc.tmpl > .gdbrc
+	@echo "add-symbol-file obj/user/$*" >> .gdbrc
+	@echo "***"
+	@echo "*** Now run 'make gdb'." 1>&2
+	@echo "***"
+	@$(QEMU) -nographic $(QEMUOPTS) -S
+	
 run-%-gdb: prep-% pre-qemu
-	$(QEMU) $(QEMUOPTS) -S
+	@sed "s/localhost:1234/localhost:$(GDBPORT)/" < .gdbrc.tmpl > .gdbrc
+	@echo "add-symbol-file obj/user/$*" >> .gdbrc
+	@echo "***"
+	@echo "*** Now run 'make gdb'." 1>&2
+	@echo "***"
+	@$(QEMU) $(QEMUOPTS) -S
 
 run-%-nox: prep-% pre-qemu
-	$(QEMU) -nographic $(QEMUOPTS)
+	@$(QEMU) -nographic $(QEMUOPTS)
 
 run-%: prep-% pre-qemu
-	$(QEMU) $(QEMUOPTS)
+	@$(QEMU) $(QEMUOPTS)
 
 # This magic automatically generates makefile dependencies
 # for header files included from C source files we compile,

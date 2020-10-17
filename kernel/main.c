@@ -1,14 +1,28 @@
+#include <cpu.h>
+
+#include <kernel/acpi.h>
 #include <kernel/console.h>
 #include <kernel/mem.h>
 #include <kernel/monitor.h>
+#include <kernel/mp.h>
+#include <kernel/pic.h>
+#include <kernel/sched.h>
+#include <kernel/tests.h>
 
 #include <boot.h>
 #include <stdio.h>
 #include <string.h>
 
+#ifdef USE_BIG_KERNEL_LOCK
+extern struct spinlock kernel_lock;
+#endif
+
 void kmain(struct boot_info *boot_info)
 {
 	extern char edata[], end[];
+	extern struct spinlock console_lock;
+	extern struct spinlock buddy_lock;
+	struct rsdp *rsdp;
 
 	/* Before doing anything else, complete the ELF loading process.
 	 * Clear the uninitialized global data (BSS) section of our program.
@@ -21,12 +35,61 @@ void kmain(struct boot_info *boot_info)
 	cons_init();
 	cprintf("\n");
 
+	/* Set up segmentation, interrupts and system calls. */
+	gdt_init();
+	idt_init();
+	syscall_init();
+
 	/* Lab 1 memory management initialization functions */
 	mem_init(boot_info);
 
+	/* Set up the slab allocator. */
+	kmem_init();
+	/* Set up the interrupt controller and timers */
+	pic_init();
+	rsdp = rsdp_find();
+	madt_init(rsdp);
+	lapic_init();
+	hpet_init(rsdp);
+
+	/* Set up the tasks. */
+	task_init();
+	sched_init();
+
+#ifdef USE_BIG_KERNEL_LOCK
+	spin_init(&kernel_lock, "kernel_lock");
+	spin_lock(&kernel_lock);
+#endif
+
+#ifndef USE_BIG_KERNEL_LOCK
+	spin_init(&console_lock, "console_lock");
+	spin_init(&buddy_lock, "buddy_lock");
+#endif
+
+#if defined(TEST)
+	TASK_CREATE(TEST, TASK_TYPE_USER);
+#endif
+
+/*	FIXME does not work with evil child
+ * Do not keep this when running gradelab6 as tests check for specific pids
+ */
+ //	ktask_create();
+
+	/* Setup the other cores */
+	mem_init_mp();
+	boot_cpus();
+	cprintf("Booted CPUs\n");
+
+#if defined(TEST)
+	sched_yield();
+#else
+	lab3_check_kmem();
+
 	/* Drop into the kernel monitor. */
-	while (1)
+	while (1) {
 		monitor(NULL);
+	}
+#endif
 }
 
 /*
