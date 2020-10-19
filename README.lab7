@@ -1,0 +1,24 @@
+https://wiki.osdev.org/Paging
+The remaining bits 9 through 11 are not used by the processor, and are free for the OS to store some of its own accounting information. In addition, when P is not set, the processor ignores the rest of the entry and you can use all remaining 31 bits for extra information, like recording where the page has ended up in swap space.
+
+https://elixir.bootlin.com/linux/latest/source/mm/swap.c
+https://elixir.bootlin.com/linux/latest/source/include/linux/mmzone.h#L246
+https://elixir.bootlin.com/linux/latest/source/mm/oom_kill.c
+
+
+
+Implement OOM killing
+○ (using RSS as heuristic)
+number of free pages buddy has
+
+mm/oom_kill.c:
+/*
+* The baseline for the badness score is the proportion of RAM that each
+* task's rss, pagetable and swap space use.
+*/
+points = get_mm_rss(p->mm) + get_mm_counter(p->mm,MM_SWAPENTS) +
+mm_pgtables_bytes(p->mm) / PAGE_SIZE;
+/* Normalize to oom_score_adj units */
+adj = totalpages / 1000;
+points += adj;
+
