@@ -22,3 +22,8 @@ mm_pgtables_bytes(p->mm) / PAGE_SIZE;
 adj = totalpages / 1000;
 points += adj;
 
+page 211
+3.4.3 The First-In, First-Out (FIFO) Page Replacement Algorithm
+As a page replacement algorithm, the same idea is applicable. The operating
+system maintains a list of all pages currently in memory, with the most recent arrival at the tail and the least recent arrival at the head. On a page fault, the page at
+the head is removed and the new page added to the tail of the list.

@@ -1,10 +1,31 @@
 #include <kernel/mem/swap.h>
 
-void put_page();
-void get_page();
+/* save page to disk */
+static void put_page(struct page_info *page) {
 
-void swap_init();
-void swap_out();
-void swap_in();
+}
 
-void swap_kd(); // task kernel daemon
+/* read page from disk */
+static void get_page() {
+
+}
+
+void swap_init() {
+
+}
+
+void swap_free() {
+
+}
+
+void swap_rmap_add(struct page_info *page) {
+
+}
+
+void swap_rmap_remove(struct page_info *page) {
+
+}
+
+void swap_kd() {
+
+}

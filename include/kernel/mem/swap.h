@@ -1,34 +1,28 @@
 #pragma once
 
 #include <spinlock.h>
+#include <include/list.h>
+#include <include/paging.h>
 
-//FIXME rmap or swap_info_struct
-//struct rmap {
-//	struct spinlock rmap_lock;
-//};
+struct rmap {
+	struct list node;
+	uint8_t r;	// second chance bit
+};
 
+// global struct to keep swap related data
 struct swap_info_struct {
-	unsigned long	flags;
-	signed short prio;
-	signed char type;
-	unsigned int max;
-	unsigned char *swap_map;
-	unsigned int lowest_bit;
-	unsigned int highest_bit;
-	unsigned int pages;
-	unsigned int inuse_pages;
-	unsigned int cluster_next;
-	struct block_device *bdev;
-	struct file *swap_file;
-	spinlock_t lock;
+	struct spinlock lock;
+	struct list rmap;	// lru list
 };
 
 void swap_init();
-void swap_out();
-void swap_in();
+
+// put data to disk and free frames (one for now)
+void swap_free();
+// add page to lru list
+void swap_rmap_add(struct page_info *page);
+// add page from lru list
+void swap_rmap_remove(struct page_info *page);
 
 void swap_kd(); // task kernel daemon
 
-/* clock lru_list second chance
- *
- * */
