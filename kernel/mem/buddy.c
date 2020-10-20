@@ -6,22 +6,24 @@
 #include <atomic.h>
 
 #include <kernel/mem.h>
+#include <include/kernel/mem/swap.h>
 
 /* Physical page metadata. */
 size_t npages;
+size_t nfree_pages;	// PAGE_SIZE
 struct page_info *pages;
 
 /* Lists of physical pages. */
 struct list page_free_list[BUDDY_MAX_ORDER];
 
-#ifndef USE_BIG_KERNEL_LOCK
 /* Lock for the buddy allocator. */
 struct spinlock buddy_lock = {
 #ifdef DEBUG_SPINLOCK
 	.name = "buddy_lock",
 #endif
 };
-#endif
+
+#define THRESHOLD 10
 
 /* Counts the number of free pages for the given order.
  */
@@ -84,9 +86,23 @@ size_t count_total_free_pages(void)
 	return nfree;
 }
 
+/* Gets the total amount of free PAGE_SIZE pages */
+size_t count_free_PAGESIZE_pages(void)
+{
+	size_t order;
+	size_t nfree_pages;
+	size_t nfree = 0;
+
+	for (order = 0; order < BUDDY_MAX_ORDER; ++order) {
+		nfree_pages = count_free_pages(order);
+		nfree += nfree_pages * (1 << order);
+	}
+
+	return nfree;
+}
+
 struct page_info *get_buddy(struct page_info *page) {
 	return pages + ((uint64_t)(page - pages) ^ ((uint64_t)1 << page->pp_order));
-//    return pa2page(page2pa(page) ^ ((uint64_t)1 << (page->pp_order+PAGE_TABLE_SHIFT)));
 }
 
 /* Splits lhs into free pages until the order of the page is the requested
@@ -229,13 +245,15 @@ struct page_info *page_alloc(int alloc_flags)
 	struct page_info *page;
 	size_t req_order;
 
-#ifndef USE_BIG_KERNEL_LOCK
 	spin_lock(&buddy_lock);
-#endif
+
+	if (count_free_PAGESIZE_pages() < THRESHOLD) {
+		swap_free();
+	}
 
 	req_order = ((unsigned int)alloc_flags & (unsigned int)ALLOC_HUGE) ? BUDDY_2M_PAGE : BUDDY_4K_PAGE;
 	page = buddy_find(req_order);
-    list_remove(&page->pp_node);
+	list_remove(&page->pp_node);
     page->pp_free = 0;
 
 	if (!page)
@@ -244,9 +262,7 @@ struct page_info *page_alloc(int alloc_flags)
 	if ((unsigned int)alloc_flags & (unsigned int)ALLOC_ZERO)
 		memset(page2kva(page), '\0', (uint64_t)PAGE_SIZE << req_order);
 
-#ifndef USE_BIG_KERNEL_LOCK
 	spin_unlock(&buddy_lock);
-#endif
 
 	return page;
 }
@@ -274,18 +290,16 @@ void page_free(struct page_info *pp)
  */
 void page_decref(struct page_info *pp)
 {
-#ifndef USE_BIG_KERNEL_LOCK
+//	TODO try moving this lock in page_free
 	spin_lock(&buddy_lock);
-#endif
 
 	atomic_dec(&pp->pp_ref);
 	if (pp->pp_ref == 0) {
+		swap_rmap_remove(pp);
 		page_free(pp);
 	}
 
-#ifndef USE_BIG_KERNEL_LOCK
 	spin_unlock(&buddy_lock);
-#endif
 }
 
 static int in_page_range(void *p)

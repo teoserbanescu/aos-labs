@@ -3,12 +3,17 @@
 #include <atomic.h>
 
 #include <kernel/mem.h>
+#include <include/kernel/mem/swap.h>
 
 struct populate_info {
 	uint64_t flags;
 	uintptr_t base, end;
+	bool isuser_mem;
 };
 
+/* Similar to ptbl_alloc, but flags are given here
+ * and udata is a different structure
+ */
 static int populate_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
     struct page_walker *walker)
 {
@@ -19,13 +24,18 @@ static int populate_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	if (*entry & PAGE_PRESENT) {
 		return 0;
 	}
-	else {
-		page = page_alloc(ALLOC_ZERO);
-		if (!page)
-			panic("ptbl_alloc page alloc no mem\n");
-		atomic_inc(&page->pp_ref);
-		*entry = PAGE_ADDR(page2pa(page)) | info->flags;
+
+	page = page_alloc(ALLOC_ZERO);
+	atomic_inc(&page->pp_ref);
+	*entry = PAGE_ADDR(page2pa(page)) | info->flags;
+
+	/* Add to global list of pages for swap purposes
+	 * No swap for kernel pages
+	 * */
+	if (info->isuser_mem) {
+		swap_rmap_add(page);
 	}
+
 	return 0;
 }
 
@@ -36,11 +46,8 @@ static int populate_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct populate_info *info = walker->udata;
 
 	/* LAB 3: your code here. */
-
-	/* Similar to ptbl_alloc, but flags are given here
-	 * and udata is a different structure
-	 */
-	ptbl_alloc(entry, base, end, walker);
+//	no huge pages for now
+	populate_pte(entry, base, end, walker);
 
 	return 0;
 }
@@ -56,7 +63,9 @@ void populate_region(struct page_table *pml4, void *va, size_t size,
 		.flags = flags,
 		.base = ROUNDDOWN((uintptr_t)va, PAGE_SIZE),
 		.end = ROUNDUP((uintptr_t)va + size, PAGE_SIZE) - 1,
+		.isuser_mem = pml4 == kernel_pml4,
 	};
+
 	struct page_walker walker = {
 		.get_pte = populate_pte,
 		.get_pde = populate_pde,

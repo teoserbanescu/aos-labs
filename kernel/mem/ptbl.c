@@ -20,13 +20,11 @@ int ptbl_alloc(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	if (*entry & PAGE_PRESENT) {
 	    return 0;
 	}
-	else {
-        page = page_alloc(ALLOC_ZERO);
-        if (!page)
-            panic("ptbl_alloc page alloc no mem\n");
-        atomic_inc(&page->pp_ref);
-        *entry = PAGE_ADDR(page2pa(page)) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
-	}
+
+	page = page_alloc(ALLOC_ZERO);
+	atomic_inc(&page->pp_ref);
+	*entry = PAGE_ADDR(page2pa(page)) | PAGE_PRESENT | PAGE_WRITE | PAGE_USER;
+
 	return 0;
 }
 
