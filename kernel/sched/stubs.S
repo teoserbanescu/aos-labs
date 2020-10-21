@@ -72,6 +72,31 @@ syscall64:
 	/* Store the register state into the per-cpu struct. */
 
 
+.global ksave_frame
+ksave_frame:
+    movq %r8, IF_R8(%rdi)
+    movq %r9, IF_R9(%rdi)
+    movq %r10, IF_R10(%rdi)
+    movq %r11, IF_R11(%rdi)
+    movq %r12, IF_R12(%rdi)
+    movq %r13, IF_R13(%rdi)
+    movq %r14, IF_R14(%rdi)
+    movq %r15, IF_R15(%rdi)
+
+    movq %rsi, IF_RSI(%rdi)
+    movq %rbp, IF_RBP(%rdi)
+    movq %rbx, IF_RBX(%rdi)
+    movq %rdx, IF_RDX(%rdi)
+    movq %rcx, IF_RCX(%rdi)
+    movq %rax, IF_RAX(%rdi)
+
+    // return address is the rip for when we return
+    // can not movq directly for some reason
+    movq 8(%rsp), %rax
+    movq %rax, IF_RIP(%rdi)
+
+    ret
+
 .global iret64
 iret64:
 	/* LAB 3: your code here. */
@@ -86,8 +111,6 @@ iret64:
     pushq IF_CS(%rdi)
     pushq IF_RIP(%rdi)
 
-/* I think for context switch we need all of them
- */
 	movq IF_R8(%rdi), %r8
 	movq IF_R9(%rdi), %r9
 	movq IF_R10(%rdi), %r10

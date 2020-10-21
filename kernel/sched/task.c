@@ -310,9 +310,13 @@ void task_create(uint8_t *binary, enum task_type type)
 void kjob() {
 	cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
 	if (nuser_tasks) {
-		sched_yield();
+		ksched_yield();
 	}
 	task_destroy(cur_task);
+}
+
+void ksched_yield() {
+	ksave_frame(&cur_task->task_frame);
 }
 
 void ktask_create()
