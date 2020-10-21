@@ -13,6 +13,7 @@
 #include <boot.h>
 #include <stdio.h>
 #include <string.h>
+#include <include/kernel/mem/swap.h>
 
 #ifdef USE_BIG_KERNEL_LOCK
 extern struct spinlock kernel_lock;
@@ -58,15 +59,10 @@ void kmain(struct boot_info *boot_info)
 	task_init();
 	sched_init();
 
-#ifdef USE_BIG_KERNEL_LOCK
-	spin_init(&kernel_lock, "kernel_lock");
-	spin_lock(&kernel_lock);
-#endif
-
-#ifndef USE_BIG_KERNEL_LOCK
 	spin_init(&console_lock, "console_lock");
 	spin_init(&buddy_lock, "buddy_lock");
-#endif
+
+	swap_init();
 
 #if defined(TEST)
 	TASK_CREATE(TEST, TASK_TYPE_USER);
@@ -75,7 +71,7 @@ void kmain(struct boot_info *boot_info)
 /*	FIXME does not work with evil child
  * Do not keep this when running gradelab6 as tests check for specific pids
  */
- //	ktask_create();
+// 	ktask_create();
 
 	/* Setup the other cores */
 	mem_init_mp();
