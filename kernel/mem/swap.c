@@ -1,5 +1,5 @@
 #include <kernel/mem/swap.h>
-#include <kernel/sched.h>
+#include <kernel/sched/sched.h>
 #include <kernel/dev/disk.h>
 #include <include/kernel/mem.h>
 #include <error.h>
@@ -59,7 +59,7 @@ static void get_page(struct page_info *page, int blocking) {
 	int sector = 0;
 
 	if (!spin_trylock(&disk_lock)) {
-		sched_yield();
+		ksched_yield();
 	}
 
 	disk = disks[SWAP_DISK_ID];
@@ -68,7 +68,7 @@ static void get_page(struct page_info *page, int blocking) {
 
 	while (!disk_poll(disk)){
 		if(!blocking) {
-			sched_yield();
+			ksched_yield();
 		}
 	}
 

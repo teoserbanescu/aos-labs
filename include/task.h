@@ -83,6 +83,8 @@ struct task {
 //#endif
 };
 
+void ksched_yield();
+void ksave_frame(struct int_frame *frame);
 void task_init_frame(struct task *task, enum task_type type);
 
 int insert_task(struct task *task);
