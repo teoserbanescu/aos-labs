@@ -11,8 +11,26 @@ struct spinlock lru_lock;
 #define SWAP_DISK_ID 1
 
 /* save page to disk */
-static void put_page(struct page_info *page) {
+static void put_page(struct page_info *page, int sector) {
+	struct disk *disk;
+	char *buf;
+	static int nsectors = PAGE_SIZE / SECT_SIZE; /* = 8 */
 
+	while(!spin_trylock(&disk_lock)) {
+		ksched_yield();
+	}
+
+	disk = disks[SWAP_DISK_ID];
+	buf = page2kva(page);
+	assert(disk_write(disk, buf, nsectors, sector)  == -EAGAIN);
+
+	while (!disk_poll(disk)){
+		ksched_yield();
+	}
+
+	assert(disk_write(disk, buf, nsectors, sector) == PAGE_SIZE);
+
+	spin_unlock(&disk_lock);
 }
 
 void put_page_blocking(struct page_info *page) {
@@ -52,13 +70,12 @@ void get_page_blocking(struct page_info *page) {
 }
 
 /* read page from disk */
-static void get_page(struct page_info *page, int blocking) {
+static void get_page(struct page_info *page, int sector) {
 	struct disk *disk;
 	char *buf;
 	static int nsectors = PAGE_SIZE / SECT_SIZE; /* = 8 */
-	int sector = 0;
 
-	if (!spin_trylock(&disk_lock)) {
+	while(!spin_trylock(&disk_lock)) {
 		ksched_yield();
 	}
 
@@ -67,12 +84,10 @@ static void get_page(struct page_info *page, int blocking) {
 	assert(disk_read(disk, buf, nsectors, sector)  == -EAGAIN);
 
 	while (!disk_poll(disk)){
-		if(!blocking) {
-			ksched_yield();
-		}
+		ksched_yield();
 	}
 
-	disk_read(disk, buf, nsectors, sector);
+	assert(disk_read(disk, buf, nsectors, sector) == PAGE_SIZE);
 
 	spin_unlock(&disk_lock);
 }
@@ -87,13 +102,15 @@ void test_disk() {
 	for (int i = 0; i < PAGE_SIZE; ++i) {
 		buf[i] = 'A' + i / SECT_SIZE;
 	}
-	put_page_blocking(page);
+//	put_page_blocking(page);
+	put_page(page, 0);
 
 	for (int i = 0; i < PAGE_SIZE; ++i) {
 		buf[i] = 0;
 	}
 
-	get_page_blocking(page);
+//	get_page_blocking(page);
+	get_page(page, 0);
 
 	for (int i = 0; i < PAGE_SIZE; ++i) {
 		if (buf[i])
