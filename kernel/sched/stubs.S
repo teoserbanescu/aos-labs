@@ -83,18 +83,37 @@ ksave_frame:
     movq %r14, IF_R14(%rdi)
     movq %r15, IF_R15(%rdi)
 
-    movq %rsi, IF_RSI(%rdi)
-    movq %rbp, IF_RBP(%rdi)
     movq %rbx, IF_RBX(%rdi)
     movq %rdx, IF_RDX(%rdi)
     movq %rcx, IF_RCX(%rdi)
     movq %rax, IF_RAX(%rdi)
 
+// or move rbp
+    movq %rsp, %rax
+    add $0x8, %rax
+    movq %rax, IF_RSP(%rdi)
+
+    movq %rsi, IF_RSI(%rdi)
+    movq %rbp, IF_RBP(%rdi)
+
+    movq %ss, %rax
+    movq %rax, IF_SS(%rdi)
+    movq %cs, %rax
+    movq %rax, IF_CS(%rdi)
+
+//    pushfd // Push EFLAGS.
+//    popq %rax
+//    movq %rax, IF_ERR(%rdi)
+
+    pushfq // Push RFLAGS.
+    popq %rax
+    movq %rax, IF_RFLAGS(%rdi)
+
     // return address is the rip for when we return
-    // can not movq directly for some reason
-    movq 8(%rsp), %rax
+    movq (%rsp), %rax
     movq %rax, IF_RIP(%rdi)
 
+    callq sched_yield
     ret
 
 .global iret64

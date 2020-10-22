@@ -12,6 +12,7 @@
 
 #include <spinlock.h>
 #include <include/atomic.h>
+#include <include/kernel/mem/swap.h>
 
 pid_t pid_max = 1 << 16;
 struct task **tasks = (struct task **)PIDMAP_BASE;
@@ -308,15 +309,18 @@ void task_create(uint8_t *binary, enum task_type type)
  *
  * */
 void kjob() {
-	cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
-	if (nuser_tasks) {
-		ksched_yield();
-	}
+//	while (nuser_tasks) {
+//		cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
+//		ksched_yield();
+//	}
+	swap_init();
 	task_destroy(cur_task);
 }
 
 void ksched_yield() {
+	assert(cur_task->task_type == TASK_TYPE_KERNEL);
 	ksave_frame(&cur_task->task_frame);
+//	sched_yield();
 }
 
 void ktask_create()
