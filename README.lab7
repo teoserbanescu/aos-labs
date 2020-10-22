@@ -27,3 +27,15 @@ page 211
 As a page replacement algorithm, the same idea is applicable. The operating
 system maintains a list of all pages currently in memory, with the most recent arrival at the tail and the least recent arrival at the head. On a page fault, the page at
 the head is removed and the new page added to the tail of the list.
+
+
+yield from kernel task is simple because we have only to save the frame
+
+problem is that we need yield also when cur_task is user
+    this is the case when user needs a page
+    there are no frames left so we need swap
+    buddy starts swap, but we need to yield
+
+user is blocked anyway because it waits for the kernel to give him the page
+but kernel should also yield until swap mem is ready
+

@@ -133,6 +133,7 @@ int task_setup_pid(struct task *task) {
 
 void task_init_frame(struct task *task, enum task_type type) {
 	memset(&task->task_frame, 0, sizeof task->task_frame);
+	memset(&task->ktask_frame, 0, sizeof task->task_frame);
 
 	if (type == TASK_TYPE_USER) {
 		task->task_frame.ds = GDT_UDATA | 3;
@@ -142,10 +143,9 @@ void task_init_frame(struct task *task, enum task_type type) {
 		task->task_frame.rflags = FLAGS_IF;
 	}
 	else {
-		task->task_frame.ds = GDT_KDATA | 0;
-		task->task_frame.ss = GDT_KDATA | 0;
-		task->task_frame.rsp = USTACK_TOP;
-		task->task_frame.cs = GDT_KCODE | 0;
+		task->ktask_frame.ds = GDT_KDATA | 0;
+		task->ktask_frame.ss = GDT_KDATA | 0;
+		task->ktask_frame.cs = GDT_KCODE | 0;
 /*	Interrupts are disabled for kernel tasks
  *	It would be crazy hard to remember what we were doing before interrupt
  */
@@ -308,35 +308,36 @@ void task_create(uint8_t *binary, enum task_type type)
  *
  *
  * */
-void kjob() {
-//	while (nuser_tasks) {
+void kjob(void *func) {
+	while (nuser_tasks) {
 //		cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
-//		ksched_yield();
-//	}
-	swap_init();
+		((void (*)()) func)();
+		ksched_yield();
+	}
 	task_destroy(cur_task);
 }
 
 void ksched_yield() {
-	assert(cur_task->task_type == TASK_TYPE_KERNEL);
-	ksave_frame(&cur_task->task_frame);
-//	sched_yield();
+	cur_task->kyield = true;
+	asm_ksched_yield(&cur_task->ktask_frame);
 }
 
-void ktask_create()
+struct task* ktask_create(void *func)
 {
 	struct task *task;
 
 	task = task_alloc(0, TASK_TYPE_KERNEL);
 	task->task_runtime = -2; /* be nice and set priority to lowest in order to let user tasks run first*/
 	task->task_pml4 = kernel_pml4;
-	task->task_frame.rsp = KSTACK_TOP - ncpus * (KSTACK_SIZE + KSTACK_GAP);
-	populate_region(task->task_pml4, (void*) task->task_frame.rsp - KSTACK_SIZE, KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
+	task->ktask_frame.rsp = KSTACK_TOP - ncpus * (KSTACK_SIZE + KSTACK_GAP);
+	populate_region(task->task_pml4, (void*) task->ktask_frame.rsp - KSTACK_SIZE, KSTACK_SIZE, PAGE_PRESENT | PAGE_WRITE | PAGE_NO_EXEC);
 
-	task->task_frame.rip = (uint64_t)kjob;
+	task->ktask_frame.rdi = (uint64_t)func;
+	task->ktask_frame.rip = (uint64_t)kjob;
 
-//	atomic_inc(&nuser_tasks);
 	insert_task(task);
+
+	return task;
 }
 
 static void task_make_orphans(struct task *task) {
@@ -540,6 +541,12 @@ void task_run(struct task *task)
 #ifdef USE_BIG_KERNEL_LOCK
 	spin_unlock(&kernel_lock);
 #endif
-	task_pop_frame(&task->task_frame);
+	if (cur_task->kyield || cur_task->task_type == TASK_TYPE_KERNEL) {
+		cur_task->kyield = false;
+		task_pop_frame(&task->ktask_frame);
+	}
+	else {
+		task_pop_frame(&task->task_frame);
+	}
 }
 

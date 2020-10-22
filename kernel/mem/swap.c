@@ -3,6 +3,8 @@
 #include <kernel/dev/disk.h>
 #include <include/kernel/mem.h>
 #include <error.h>
+#include <include/cpu.h>
+#include <include/kernel/sched.h>
 
 struct spinlock disk_lock;
 struct spinlock lru_lock;
@@ -121,7 +123,11 @@ void test_disk() {
 }
 
 void swap_init() {
-	test_disk();
+
+//	test_disk();
+	struct task *task_swapkd;
+
+	task_swapkd = ktask_create(swap_kd);
 }
 
 void swap_free() {
@@ -137,5 +143,5 @@ void swap_rmap_remove(struct page_info *page) {
 }
 
 void swap_kd() {
-
+	cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
 }
