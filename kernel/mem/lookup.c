@@ -16,6 +16,10 @@ static int lookup_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct lookup_info *info = walker->udata;
 
 	/* LAB 2: your code here. */
+	if(*entry & PAGE_SWAP) {
+		info->entry = entry;
+		return 0;
+	}
 	if (*entry & PAGE_PRESENT) {
         info->entry = entry;
         return 0;
@@ -67,9 +71,11 @@ struct page_info *page_lookup(struct page_table *pml4, void *va,
 		return NULL;
 
 	if (entry_store) {
-            // store the address of the PTE for this page into entry_store
-        *entry_store = info.entry;
-
+		// store the address of the PTE for this page into entry_store
+		*entry_store = info.entry;
+		if((**entry_store & PAGE_SWAP)) {
+			return NULL;
+		}
     }
     return pa2page(PAGE_ADDR(*info.entry));
 }

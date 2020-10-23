@@ -2,13 +2,13 @@
 #include <lib.h>
 
 #define ARRAY_SIZE (128 * 1024 * 1024)
+//#define ARRAY_SIZE (128 * 1024)
 
 char big_array[ARRAY_SIZE];
 
 int main(int argc, char **argv)
 {
 	int i;
-
 	/* Write to all of the available physical memory. */
 	memset(big_array, 0xd0, sizeof big_array);
 	assert(big_array[10] == (char)0xd0);
