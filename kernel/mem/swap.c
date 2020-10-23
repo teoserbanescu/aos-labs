@@ -13,6 +13,7 @@
 
 struct spinlock disk_lock;
 struct spinlock lru_lock;
+struct spinlock swap_lock;
 
 struct list *lru_head = NULL;
 struct task *task_swapkd = NULL;
@@ -29,6 +30,7 @@ struct page_info* lru_get_page() {
 
 	while(true) {
 		page = container_of(lru_head, struct page_info, rmap);
+		lru_head = lru_head->next;
 
 		if (page->rmap.r == SECOND_CHANCE) {
 			list_pop_left(lru_head);
@@ -37,7 +39,6 @@ struct page_info* lru_get_page() {
 		}
 
 		page->rmap.r = SECOND_CHANCE;
-		lru_head = lru_head->next;
 	}
 
 out:
@@ -164,9 +165,10 @@ void swap_init() {
 //	test_disk();
 	spin_init(&disk_lock, "disk_lock");
 	spin_init(&lru_lock, "lru_lock");
+	spin_init(&swap_lock, "swap_lock");
 
 	sectors = (char *)page2kva(page_alloc(ALLOC_ZERO | ALLOC_HUGE));
-	task_swapkd = ktask_create(swap_kd);
+//	task_swapkd = ktask_create(swap_kd);
 }
 
 int get_free_sector() {
@@ -181,7 +183,9 @@ int get_free_sector() {
 	}
 
 	assert(i < NMAX_SECTORS);
-	sectors[i] = 1;
+	for (int j = 0; j < 8; ++j) {
+		sectors[i + j] = 1;
+	}
 
 	spin_unlock(&disk_lock);
 
@@ -222,6 +226,7 @@ static void do_swap_out() {
 	int sector;
 
 	page = lru_get_page();
+//	cprintf("%p\n", page);
 
 	sector = get_free_sector();
 	set_swapped(page, sector);
@@ -235,12 +240,18 @@ void swap_in(physaddr_t *entry) {
 	struct page_info *page;
 	int sector;
 
+	spin_lock(&swap_lock);
 	assert(*entry | PAGE_SWAP);
 	sector = PAGE_ADDR(*entry) >> PAGE_TABLE_SHIFT;
+
 	page = page_alloc(ALLOC_SIMPLE);
 	swap_rmap_add(page);
 	set_active(page, entry);
 	get_page(page, sector);
+	for (int j = 0; j < 8; ++j) {
+		sectors[sector + j] = 0;
+	}
+	spin_unlock(&swap_lock);
 }
 
 // direct swapping
@@ -252,16 +263,18 @@ void swap_free() {
  *	On another thread or waiting for disk
  *	wait to finish until running this task
  */
-	while (!spin_trylock(&task_swapkd->task_lock)) {
-		swapping = 1;
-		ksched_yield();
-	}
+//	while (!spin_trylock(&task_swapkd->task_lock)) {
+//		swapping = 1;
+//		ksched_yield();
+//	}
 //	gem mem fast, do not let user wait
 //	already swapped by kthread
-	if (!swapping) {
+//	if (!swapping) {
+//	if (!swap_lock.locked)
 		do_swap_out();
-	}
-	spin_unlock(&task_swapkd->task_lock);
+//	}
+//	spin_unlock(&swap_lock);
+//	spin_unlock(&task_swapkd->task_lock);
 }
 
 void swap_rmap_add(struct page_info *page) {

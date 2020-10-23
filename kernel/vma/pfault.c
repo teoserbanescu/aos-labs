@@ -4,6 +4,7 @@
 #include <kernel/mem.h>
 #include <kernel/vma.h>
 #include <include/kernel/mem/swap.h>
+#include <include/lib.h>
 
 static struct page_info *page_zero = NULL;
 

@@ -47,8 +47,8 @@ static int populate_pde(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	struct populate_info *info = walker->udata;
 
 	/* LAB 3: your code here. */
-//	no huge pages for now
-	populate_pte(entry, base, end, walker);
+//	DO NOT CALL populate_pte we do not want this page to be in swapped
+	ptbl_alloc(entry, base, end, walker);
 
 	return 0;
 }

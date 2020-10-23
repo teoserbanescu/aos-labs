@@ -730,7 +730,7 @@ void page_fault_handler(struct int_frame *frame)
                 cur_task->task_pid, fault_va, frame->rip, this_cpu->cpu_id);
         print_int_frame(frame);
         // FIXME what if a kernel page has not been mapped yet?
-//        Leave it like this for now to see when it crashes and fit it then
+//        Leave it like this for now
         panic("Kernel-mode page fault");
     }
 
