@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <include/kernel/mem/swap.h>
+#include <include/kernel/mem/oom.h>
 
 #ifdef USE_BIG_KERNEL_LOCK
 extern struct spinlock kernel_lock;
@@ -70,6 +71,7 @@ void kmain(struct boot_info *boot_info)
 	cprintf("Booted CPUs\n");
 
 	swap_init();
+	oom_init();
 
 #if defined(TEST)
 	TASK_CREATE(TEST, TASK_TYPE_USER);
