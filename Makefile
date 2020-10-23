@@ -133,7 +133,7 @@ include kernel/Makefile
 include user/Makefile
 include lib/Makefile
 
-CPUS ?= 1
+CPUS ?= 2
 
 QEMUOPTS += -machine q35
 QEMUOPTS += -device ich9-ahci,id=ahci

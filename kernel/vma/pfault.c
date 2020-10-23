@@ -11,10 +11,10 @@ static struct page_info *page_zero = NULL;
 int task_page_fault_handler(struct task *task, void *va, int flags)
 {
 	/* LAB 4: your code here. */
-	struct vma *vma;
-	physaddr_t *entry;
-	struct page_info *page;
-	struct page_info *page_copy;
+	struct vma *vma = NULL;
+	physaddr_t *entry = NULL;
+	struct page_info *page = NULL;
+	struct page_info *page_copy = NULL;
 
 	vma = find_vma(NULL, NULL, &task->task_rb, va);
 	if (va < vma->vm_base || va > vma->vm_end || vma->vm_flags == 0) {
@@ -34,7 +34,7 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 	}
  #endif
 
-	if(!page && *entry & PAGE_SWAP) {
+	if(!page && entry && *entry & PAGE_SWAP) {
 		swap_in(entry);
 		return 0;
 	}
