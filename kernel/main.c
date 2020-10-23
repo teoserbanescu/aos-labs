@@ -69,9 +69,10 @@ void kmain(struct boot_info *boot_info)
 	boot_cpus();
 	cprintf("Booted CPUs\n");
 
+	swap_init();
+
 #if defined(TEST)
 	TASK_CREATE(TEST, TASK_TYPE_USER);
-	swap_init();
 	sched_yield();
 #else
 	lab3_check_kmem();

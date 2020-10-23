@@ -64,7 +64,7 @@ void populate_region(struct page_table *pml4, void *va, size_t size,
 		.flags = flags,
 		.base = ROUNDDOWN((uintptr_t)va, PAGE_SIZE),
 		.end = ROUNDUP((uintptr_t)va + size, PAGE_SIZE) - 1,
-		.isuser_mem = pml4 == kernel_pml4,
+		.isuser_mem = pml4 != kernel_pml4,
 	};
 
 	struct page_walker walker = {
