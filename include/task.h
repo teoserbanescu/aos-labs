@@ -84,6 +84,8 @@ struct task {
 	struct spinlock task_lock;
 
 	bool kyield;
+	uint32_t nactive_pages;
+	uint32_t nswapped_pages;
 };
 
 void ksched_yield();

@@ -108,9 +108,12 @@ static int task_setup_vas(struct task *task)
  */
 int task_setup_pid(struct task *task) {
 	pid_t pid;
+	static const int kpid = 1000;
+
+	pid = task->task_type == TASK_TYPE_KERNEL ? kpid : 1;
 
 	spin_lock(&pid_lock);
-	for (pid = 1; pid < pid_max; ++pid) {
+	for (; pid < pid_max; ++pid) {
 		if (!tasks[pid]) {
 			tasks[pid] = task;
 			task->task_pid = pid;
@@ -172,6 +175,8 @@ struct task *task_alloc(pid_t ppid, enum task_type type)
 		return NULL;
 	}
 
+	task->task_type = type;
+
 	if (task_setup_pid(task) < 0) {
 		kfree(task);
 		return NULL;
@@ -179,7 +184,6 @@ struct task *task_alloc(pid_t ppid, enum task_type type)
 
 	/* Set up the task. */
 	task->task_ppid = ppid;
-	task->task_type = type;
 	task->task_status = TASK_RUNNABLE;
 	task->task_runs = 0;
 

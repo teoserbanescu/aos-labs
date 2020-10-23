@@ -5,25 +5,61 @@
 #include <error.h>
 #include <include/cpu.h>
 #include <include/kernel/sched.h>
+#include <include/atomic.h>
+
+#define SWAP_DISK_ID 1
+#define DISK_SIZE 128 * 1024 * 1024
+#define NMAX_SECTORS DISK_SIZE / SECT_SIZE
 
 struct spinlock disk_lock;
 struct spinlock lru_lock;
 
-#define SECTOR_SIZE 512
-#define SWAP_DISK_ID 1
+struct list *lru_head = NULL;
+struct task *task_swapkd = NULL;
+
+char *sectors = NULL;
+
+struct page_info* lru_get_page() {
+	struct page_info *page;
+
+	spin_lock(&lru_lock);
+
+	if (!lru_head)
+		goto out;
+
+	while(true) {
+		page = container_of(lru_head, struct page_info, rmap);
+
+		if (page->rmap->r == SECOND_CHANCE) {
+			list_pop_left(lru_head);
+			spin_unlock(&lru_lock);
+			return page;
+		}
+
+		page->rmap->r = SECOND_CHANCE;
+		lru_head = lru_head->next;
+	}
+
+out:
+	spin_unlock(&lru_lock);
+	cprintf("SWAP EMPTY but page was requested\n");
+	return NULL;
+}
 
 /* save page to disk */
 static void put_page(struct page_info *page, int sector) {
 	struct disk *disk;
 	char *buf;
-	static int nsectors = PAGE_SIZE / SECT_SIZE; /* = 8 */
+	static int nsectors;
+
+	nsectors = PAGE_SIZE / SECT_SIZE; /* = 8 */
+	disk = disks[SWAP_DISK_ID];
+	buf = page2kva(page);
 
 	while(!spin_trylock(&disk_lock)) {
 		ksched_yield();
 	}
 
-	disk = disks[SWAP_DISK_ID];
-	buf = page2kva(page);
 	assert(disk_write(disk, buf, nsectors, sector)  == -EAGAIN);
 
 	while (!disk_poll(disk)){
@@ -75,14 +111,16 @@ void get_page_blocking(struct page_info *page) {
 static void get_page(struct page_info *page, int sector) {
 	struct disk *disk;
 	char *buf;
-	static int nsectors = PAGE_SIZE / SECT_SIZE; /* = 8 */
+	static int nsectors;
+
+	nsectors = PAGE_SIZE / SECT_SIZE; /* = 8 */
+	disk = disks[SWAP_DISK_ID];
+	buf = page2kva(page);
 
 	while(!spin_trylock(&disk_lock)) {
 		ksched_yield();
 	}
 
-	disk = disks[SWAP_DISK_ID];
-	buf = page2kva(page);
 	assert(disk_read(disk, buf, nsectors, sector)  == -EAGAIN);
 
 	while (!disk_poll(disk)){
@@ -123,25 +161,127 @@ void test_disk() {
 }
 
 void swap_init() {
-
 //	test_disk();
-	struct task *task_swapkd;
+	spin_init(&disk_lock, "disk_lock");
+	spin_init(&lru_lock, "lru_lock");
 
+	sectors = (char *)page2kva(page_alloc(ALLOC_ZERO | ALLOC_HUGE));
 	task_swapkd = ktask_create(swap_kd);
 }
 
-void swap_free() {
+int get_free_sector() {
+	int i;
 
+	spin_lock(&disk_lock);
+
+	for (i = 0; i < NMAX_SECTORS; ++i) {
+		if (!sectors[i]) {
+			break;
+		}
+	}
+
+	assert(i < NMAX_SECTORS);
+	sectors[i] = 1;
+
+	spin_unlock(&disk_lock);
+
+	return i;
+}
+
+static void set_swapped(struct page_info *page, int sector) {
+	physaddr_t *entry;
+
+	entry = page->rmap.entry;
+
+	spin_lock(&page->rmap->lock);
+	*entry &= (~PAGE_PRESENT);
+	*entry |= (PAGE_SWAP);
+	*entry &= (PAGE_MASK);
+	*entry |= PAGE_ADDR(sector << PAGE_TABLE_SHIFT);
+	spin_unlock(&page->rmap->lock);
+}
+
+static void set_active(struct page_info *page, int sector) {
+	physaddr_t *entry;
+
+	entry = page->rmap.entry;
+
+	spin_lock(&page->rmap->lock);
+	*entry &= (~PAGE_SWAP);
+	*entry |= (PAGE_PRESENT);
+	*entry &= (PAGE_MASK);
+//	FIXME entry addr
+	spin_unlock(&page->rmap->lock);
+}
+
+static void do_swap() {
+	struct page_info *page;
+	int sector;
+
+	page = lru_get_page();
+
+	atomic_inc(&page->rmap->task->nswapped_pages);
+	atomic_inc(&page->rmap->task->nactive_pages);
+
+	sector = get_free_sector();
+	set_swapped(page, sector);
+	put_page(page, sector);
+
+}
+
+// direct swapping
+void swap_free() {
+	static int swapping = 0;
+/*	Swapping is running. This means that swap_kd got activated
+ *  This function is called only from page_alloc when there is not enough mem.
+ *	On another thread or waiting for disk
+ *	wait to finish until running this task
+ */
+	while (!spin_trylock(&task_swapkd->task_lock)) {
+		swapping = 1;
+		ksched_yield();
+	}
+//	gem mem fast, do not let user wait
+//	already swapped by kthread
+	if (!swapping) {
+		do_swap();
+	}
+	spin_unlock(&task_swapkd->task_lock);
 }
 
 void swap_rmap_add(struct page_info *page) {
+	page->rmap->r = FIRST_CHANCE;
+	page->rmap->task = cur_task;
+	list_init(&page->rmap->node);
+	spin_init(&page->rmap->lock, "rmap page lock");
 
+	spin_lock(&lru_lock);
+
+	if (!lru_head)
+		lru_head = &page->rmap->node;
+	else
+		list_push_left(lru_head, &page->rmap->node);
+
+	spin_unlock(&lru_lock);
 }
 
 void swap_rmap_remove(struct page_info *page) {
+	spin_lock(&lru_lock);
 
+	list_remove(&page->rmap->node);
+
+	spin_unlock(&lru_lock);
 }
 
 void swap_kd() {
-	cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
+/*
+//	cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
+	while (!spin_trylock(&task_swapkd->task_lock)) {
+		ksched_yield();
+	}
+//	TODO while (not enough mem) do_swap()
+
+	spin_unlock(&task_swapkd->task_lock);
+*/
+
 }
