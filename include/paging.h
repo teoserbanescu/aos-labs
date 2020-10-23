@@ -6,10 +6,24 @@
 #include "spinlock.h"
 
 struct rmap {
+	/* The anchor node for the lru like list where swap keeps track of pages */
 	struct list node;
-	uint8_t r;	// second chance bit
+
+	/* Second chance bit */
+	uint8_t r;
+
+	/* Lock when updating the entry */
 	struct spinlock lock;
+
+	/* To update easily the number of active or swapped pages inside the task
+	 * Update them for oom reasons
+	 * */
 	struct task *task;
+
+	/* Pointer to the page table entry.
+	 * Saved when the page is allocated (populate_pte)
+	 * Updated by swap_in and swap_out
+	 * */
 	physaddr_t *entry;
 };
 
