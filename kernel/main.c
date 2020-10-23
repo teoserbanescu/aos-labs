@@ -62,15 +62,6 @@ void kmain(struct boot_info *boot_info)
 	spin_init(&console_lock, "console_lock");
 	spin_init(&buddy_lock, "buddy_lock");
 
-#if defined(TEST)
-	TASK_CREATE(TEST, TASK_TYPE_USER);
-#endif
-
-	swap_init();
-
-/*	FIXME does not work with evil child
- * Do not keep this when running gradelab6 as tests check for specific pids
- */
 // 	ktask_create(NULL);
 
 	/* Setup the other cores */
@@ -79,6 +70,8 @@ void kmain(struct boot_info *boot_info)
 	cprintf("Booted CPUs\n");
 
 #if defined(TEST)
+	TASK_CREATE(TEST, TASK_TYPE_USER);
+	swap_init();
 	sched_yield();
 #else
 	lab3_check_kmem();

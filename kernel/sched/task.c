@@ -136,7 +136,7 @@ int task_setup_pid(struct task *task) {
 
 void task_init_frame(struct task *task, enum task_type type) {
 	memset(&task->task_frame, 0, sizeof task->task_frame);
-	memset(&task->ktask_frame, 0, sizeof task->task_frame);
+	memset(&task->ktask_frame, 0, sizeof task->ktask_frame);
 
 	if (type == TASK_TYPE_USER) {
 		task->task_frame.ds = GDT_UDATA | 3;

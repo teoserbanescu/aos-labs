@@ -7,14 +7,6 @@
 #define FIRST_CHANCE 0
 #define SECOND_CHANCE 1
 
-struct rmap {
-	struct list node;
-	uint8_t r;	// second chance bit
-	struct spinlock lock;
-	struct task *task;
-	physaddr_t *entry;
-};
-
 void swap_init();
 
 // put data to disk and free frames (one for now)
@@ -26,3 +18,4 @@ void swap_rmap_remove(struct page_info *page);
 
 void swap_kd(); // task kernel daemon
 
+void swap_in(physaddr_t *entry);

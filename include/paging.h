@@ -3,7 +3,15 @@
 #include <list.h>
 
 #include <x86-64/paging.h>
-#include <include/kernel/mem/swap.h>
+#include "spinlock.h"
+
+struct rmap {
+	struct list node;
+	uint8_t r;	// second chance bit
+	struct spinlock lock;
+	struct task *task;
+	physaddr_t *entry;
+};
 
 #ifndef __ASSEMBLER__
 /*

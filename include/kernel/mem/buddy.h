@@ -43,6 +43,7 @@ enum {
 	ALLOC_ZERO = 1 << 0,
 	ALLOC_HUGE = 1 << 1,
 	ALLOC_PREMAPPED = 1 << 2,
+	ALLOC_SIMPLE = 1 << 3
 };
 
 /* The buddy allocator order for known page sizes. */

@@ -30,13 +30,13 @@ struct page_info* lru_get_page() {
 	while(true) {
 		page = container_of(lru_head, struct page_info, rmap);
 
-		if (page->rmap->r == SECOND_CHANCE) {
+		if (page->rmap.r == SECOND_CHANCE) {
 			list_pop_left(lru_head);
 			spin_unlock(&lru_lock);
 			return page;
 		}
 
-		page->rmap->r = SECOND_CHANCE;
+		page->rmap.r = SECOND_CHANCE;
 		lru_head = lru_head->next;
 	}
 
@@ -191,45 +191,60 @@ int get_free_sector() {
 static void set_swapped(struct page_info *page, int sector) {
 	physaddr_t *entry;
 
+	atomic_inc(&page->rmap.task->nswapped_pages);
+	atomic_dec(&page->rmap.task->nactive_pages);
+
 	entry = page->rmap.entry;
 
-	spin_lock(&page->rmap->lock);
+	spin_lock(&page->rmap.lock);
 	*entry &= (~PAGE_PRESENT);
 	*entry |= (PAGE_SWAP);
 	*entry &= (PAGE_MASK);
 	*entry |= PAGE_ADDR(sector << PAGE_TABLE_SHIFT);
-	spin_unlock(&page->rmap->lock);
+	spin_unlock(&page->rmap.lock);
 }
 
-static void set_active(struct page_info *page, int sector) {
-	physaddr_t *entry;
+static void set_active(struct page_info *page,physaddr_t *entry) {
 
-	entry = page->rmap.entry;
+	atomic_dec(&page->rmap.task->nswapped_pages);
+	atomic_inc(&page->rmap.task->nactive_pages);
 
-	spin_lock(&page->rmap->lock);
+	spin_lock(&page->rmap.lock);
 	*entry &= (~PAGE_SWAP);
 	*entry |= (PAGE_PRESENT);
 	*entry &= (PAGE_MASK);
-//	FIXME entry addr
-	spin_unlock(&page->rmap->lock);
+	*entry |= PAGE_ADDR(page2pa(page));
+	spin_unlock(&page->rmap.lock);
 }
 
-static void do_swap() {
+static void do_swap_out() {
 	struct page_info *page;
 	int sector;
 
 	page = lru_get_page();
 
-	atomic_inc(&page->rmap->task->nswapped_pages);
-	atomic_inc(&page->rmap->task->nactive_pages);
-
 	sector = get_free_sector();
 	set_swapped(page, sector);
 	put_page(page, sector);
+	page->pp_ref = 0;
+	page_free(page);
 
 }
 
+void swap_in(physaddr_t *entry) {
+	struct page_info *page;
+	int sector;
+
+	assert(*entry | PAGE_SWAP);
+	sector = PAGE_ADDR(*entry) >> PAGE_TABLE_SHIFT;
+	page = page_alloc(ALLOC_SIMPLE);
+	swap_rmap_add(page);
+	set_active(page, entry);
+	get_page(page, sector);
+}
+
 // direct swapping
+// called only from page_alloc, locked by buddy
 void swap_free() {
 	static int swapping = 0;
 /*	Swapping is running. This means that swap_kd got activated
@@ -244,31 +259,34 @@ void swap_free() {
 //	gem mem fast, do not let user wait
 //	already swapped by kthread
 	if (!swapping) {
-		do_swap();
+		do_swap_out();
 	}
 	spin_unlock(&task_swapkd->task_lock);
 }
 
 void swap_rmap_add(struct page_info *page) {
-	page->rmap->r = FIRST_CHANCE;
-	page->rmap->task = cur_task;
-	list_init(&page->rmap->node);
-	spin_init(&page->rmap->lock, "rmap page lock");
+	page->rmap.r = FIRST_CHANCE;
+	page->rmap.task = cur_task;
+	list_init(&page->rmap.node);
+	spin_init(&page->rmap.lock, "rmap page lock");
 
 	spin_lock(&lru_lock);
 
 	if (!lru_head)
-		lru_head = &page->rmap->node;
+		lru_head = &page->rmap.node;
 	else
-		list_push_left(lru_head, &page->rmap->node);
+		list_push_left(lru_head, &page->rmap.node);
 
 	spin_unlock(&lru_lock);
 }
 
 void swap_rmap_remove(struct page_info *page) {
+	if (!page->rmap.task) {
+		return;
+	}
 	spin_lock(&lru_lock);
 
-	list_remove(&page->rmap->node);
+	list_remove(&page->rmap.node);
 
 	spin_unlock(&lru_lock);
 }
@@ -279,7 +297,7 @@ void swap_kd() {
 	while (!spin_trylock(&task_swapkd->task_lock)) {
 		ksched_yield();
 	}
-//	TODO while (not enough mem) do_swap()
+//	TODO while (not enough mem) do_swap_out()
 
 	spin_unlock(&task_swapkd->task_lock);
 */
