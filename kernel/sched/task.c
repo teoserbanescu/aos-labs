@@ -314,7 +314,6 @@ void task_create(uint8_t *binary, enum task_type type)
  * */
 void kjob(void *func) {
 	while (nuser_tasks) {
-//		cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
 		((void (*)()) func)();
 		ksched_yield();
 	}

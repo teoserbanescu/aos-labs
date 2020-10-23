@@ -682,10 +682,6 @@ void int_dispatch(struct int_frame *frame)
 /* isr$N jumps to isr_common_stub which jumps to */
 void int_handler(struct int_frame *frame)
 {
-#ifdef USE_BIG_KERNEL_LOCK
-	spin_lock(&kernel_lock);
-#endif
-
 	/* The task may have set DF and some versions of GCC rely on DF being
 	 * clear. */
 	asm volatile("cld" ::: "cc");

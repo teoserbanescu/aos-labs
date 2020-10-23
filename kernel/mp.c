@@ -98,11 +98,8 @@ void mp_main(void)
  */
 
 
-#ifdef USE_BIG_KERNEL_LOCK
 	extern volatile size_t nuser_tasks;
-	while(nuser_tasks < 2);
-	spin_lock(&kernel_lock);
-#endif
+	while(nuser_tasks == 0);
 
 	sched_yield();
 }

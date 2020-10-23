@@ -292,6 +292,8 @@ void swap_rmap_remove(struct page_info *page) {
 }
 
 void swap_kd() {
+	cprintf("hello from %s cpuid %u\n", __PRETTY_FUNCTION__, this_cpu->cpu_id);
+	cur_task->task_runtime = -2;
 /*
 //	cprintf("hello from kernel task cpuid %u\n", this_cpu->cpu_id);
 	while (!spin_trylock(&task_swapkd->task_lock)) {
