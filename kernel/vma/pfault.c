@@ -3,6 +3,7 @@
 
 #include <kernel/mem.h>
 #include <kernel/vma.h>
+#include <include/kernel/mem/swap.h>
 
 static struct page_info *page_zero = NULL;
 
@@ -32,6 +33,11 @@ int task_page_fault_handler(struct task *task, void *va, int flags)
 		return 0;
 	}
  #endif
+
+	if(!page && *entry & PAGE_SWAP) {
+		swap_in(entry);
+		return 0;
+	}
 
 /* COW */
 	if(entry && page &&
