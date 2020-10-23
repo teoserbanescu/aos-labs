@@ -1,3 +1,6 @@
+These are only draft notes for lab7, the full report is in REPORT_LAB7.md
+
+
 https://wiki.osdev.org/Paging
 The remaining bits 9 through 11 are not used by the processor, and are free for the OS to store some of its own accounting information. In addition, when P is not set, the processor ignores the rest of the entry and you can use all remaining 31 bits for extra information, like recording where the page has ended up in swap space.
 
