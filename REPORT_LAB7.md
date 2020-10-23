@@ -66,6 +66,7 @@ We starting with a simple blocking function for reading and writing to disk, jus
 ## Kernel task
 ### Limitations
 Scheduling kernel tasks needs to be tweaked. This is because every threads pops tasks from its local runqueue, we had the problem that when user tasks finished on that thread, this kernel task might keep a thread busy for no reason.
+Swap kernel task not finished
 
 ## References
 [1] https://wiki.osdev.org/Paging

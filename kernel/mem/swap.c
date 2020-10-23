@@ -6,6 +6,7 @@
 #include <include/cpu.h>
 #include <include/kernel/sched.h>
 #include <include/atomic.h>
+#include <include/kernel/mem/oom.h>
 
 #define SWAP_DISK_ID 1
 #define DISK_SIZE 128 * 1024 * 1024
@@ -162,7 +163,6 @@ void test_disk() {
 }
 
 void swap_init() {
-//	test_disk();
 	spin_init(&disk_lock, "disk_lock");
 	spin_init(&lru_lock, "lru_lock");
 	spin_init(&swap_lock, "swap_lock");
@@ -226,7 +226,11 @@ static void do_swap_out() {
 	int sector;
 
 	page = lru_get_page();
-//	cprintf("%p\n", page);
+
+	if (!page) {
+		oom_kill();
+		page = lru_get_page();
+	}
 
 	sector = get_free_sector();
 	set_swapped(page, sector);
