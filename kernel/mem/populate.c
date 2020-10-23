@@ -33,6 +33,7 @@ static int populate_pte(physaddr_t *entry, uintptr_t base, uintptr_t end,
 	 * No swap for kernel pages
 	 * */
 	if (info->isuser_mem) {
+		page->rmap.entry = entry;
 		swap_rmap_add(page);
 	}
 

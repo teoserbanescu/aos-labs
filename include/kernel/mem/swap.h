@@ -4,15 +4,15 @@
 #include <include/list.h>
 #include <include/paging.h>
 
+#define FIRST_CHANCE 0
+#define SECOND_CHANCE 1
+
 struct rmap {
 	struct list node;
 	uint8_t r;	// second chance bit
-};
-
-// global struct to keep swap related data
-struct swap_info_struct {
 	struct spinlock lock;
-	struct list rmap;	// lru list
+	struct task *task;
+	physaddr_t *entry;
 };
 
 void swap_init();

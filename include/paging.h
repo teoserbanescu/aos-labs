@@ -3,6 +3,7 @@
 #include <list.h>
 
 #include <x86-64/paging.h>
+#include <include/kernel/mem/swap.h>
 
 #ifndef __ASSEMBLER__
 /*
@@ -34,6 +35,8 @@ struct page_info {
 
 	/* Reserved. */
 	uint64_t pp_zero;
+
+	struct rmap rmap;
 };
 #endif /* !__ASSEMBLER__ */
 

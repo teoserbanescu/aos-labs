@@ -38,6 +38,9 @@ struct task {
 	/* The saved registers. */
 	struct int_frame task_frame;
 
+	/* The saved registers for when we yield from kernel */
+	struct int_frame ktask_frame;
+
 	/* The task this task is waiting on. */
 	struct task *task_wait;
 
@@ -77,14 +80,16 @@ struct task {
 	uint64_t task_runtime;
 	uint64_t task_start_time;
 
-//#ifndef USE_BIG_KERNEL_LOCK
 	/* Per-task lock */
 	struct spinlock task_lock;
-//#endif
+
+	bool kyield;
+	uint32_t nactive_pages;
+	uint32_t nswapped_pages;
 };
 
 void ksched_yield();
-void ksave_frame(struct int_frame *frame);
+void asm_ksched_yield(struct int_frame *frame);
 void task_init_frame(struct task *task, enum task_type type);
 
 int insert_task(struct task *task);

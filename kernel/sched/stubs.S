@@ -72,8 +72,8 @@ syscall64:
 	/* Store the register state into the per-cpu struct. */
 
 
-.global ksave_frame
-ksave_frame:
+.global asm_ksched_yield
+asm_ksched_yield:
     movq %r8, IF_R8(%rdi)
     movq %r9, IF_R9(%rdi)
     movq %r10, IF_R10(%rdi)
